@@ -121,6 +121,56 @@ body.inking .spot{pointer-events:none}
 .inkbar .tools{display:none;flex-direction:column;gap:6px}
 body.inking .inkbar .tools{display:flex}
 .inkbar small{font-size:9px;line-height:1;text-align:center;color:var(--sub)}
+/* ===== モーション ===== */
+:root{--ease:cubic-bezier(.2,.8,.2,1);--spring:cubic-bezier(.34,1.56,.64,1)}
+@keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+@keyframes inR{from{opacity:0;transform:translateX(36px)}to{opacity:1;transform:none}}
+@keyframes inL{from{opacity:0;transform:translateX(-36px)}to{opacity:1;transform:none}}
+@keyframes pop{0%{transform:scale(1)}40%{transform:scale(1.14)}100%{transform:scale(1)}}
+@keyframes popIn{0%{opacity:0;transform:scale(.6)}100%{opacity:1;transform:scale(1)}}
+@keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-9px)}40%{transform:translateX(8px)}60%{transform:translateX(-5px)}80%{transform:translateX(3px)}}
+@keyframes ring{0%{box-shadow:0 0 0 0 rgba(31,111,181,.45)}100%{box-shadow:0 0 0 12px rgba(31,111,181,0)}}
+@keyframes ringOk{0%{box-shadow:0 0 0 0 rgba(46,158,79,.55)}100%{box-shadow:0 0 0 16px rgba(46,158,79,0)}}
+@keyframes grow{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+@keyframes bump{0%{transform:scale(1)}35%{transform:scale(1.18)}100%{transform:scale(1)}}
+@keyframes spark{0%{opacity:1;transform:translate(0,0) scale(1)}100%{opacity:0;transform:translate(var(--dx),var(--dy)) scale(.3)}}
+@keyframes dlgIn{from{opacity:0;transform:translateY(16px) scale(.96)}to{opacity:1;transform:none}}
+@keyframes bdIn{from{opacity:0}to{opacity:1}}
+@keyframes reveal{from{opacity:0;transform:translateY(-8px);clip-path:inset(0 0 100% 0)}to{opacity:1;transform:none;clip-path:inset(0 0 0 0)}}
+#app.enter>*{animation:fadeUp .38s var(--ease) backwards}
+#app.enter-next>*{animation:inR .34s var(--ease) backwards}
+#app.enter-prev>*{animation:inL .34s var(--ease) backwards}
+#app.enter>*:nth-child(2),#app.enter-next>*:nth-child(2),#app.enter-prev>*:nth-child(2){animation-delay:.05s}
+#app.enter>*:nth-child(3),#app.enter-next>*:nth-child(3),#app.enter-prev>*:nth-child(3){animation-delay:.1s}
+#app .ansbar{animation:none!important}
+.stg>*{animation:fadeUp .4s var(--ease) backwards;animation-delay:var(--d,0s)}
+.bar i{transform-origin:left;animation:grow .8s var(--ease) backwards .15s}
+.card,.q,.ch{transition:transform .2s var(--ease),box-shadow .2s var(--ease),border-color .2s}
+@media (hover:hover){.ch:hover,.q:hover{transform:translateY(-3px);box-shadow:0 8px 22px rgba(15,40,50,.12)}}
+.btn,.pill,.seg button,.choices button,header button,.inkbar button{transition:transform .15s var(--ease),background .2s,border-color .2s,color .2s,box-shadow .2s}
+.btn:active,.pill:active,.seg button:active,.choices button:active,header button:active,.inkbar button:active{transform:scale(.94)}
+.seg button.on{animation:pop .3s var(--spring)}
+.choices button.sel{animation:pop .32s var(--spring),ring .6s ease-out}
+.spot.sel{animation:ring .6s ease-out}
+.choices button.right{animation:pop .4s var(--spring),ringOk .8s ease-out}
+.choices button.pick{animation:shake .45s ease}
+.verdict{animation:popIn .38s var(--spring) both;position:relative;overflow:visible}
+.verdict.ng{animation:popIn .3s var(--ease) both,shake .45s ease .25s}
+.verdict .mkk{display:inline-block;animation:pop .5s var(--spring) .15s}
+.spark{position:absolute;left:34px;top:50%;width:8px;height:8px;border-radius:50%;pointer-events:none;animation:spark .7s var(--ease) forwards}
+#result .page{animation:reveal .5s var(--ease) both .12s}
+.page img{opacity:0;transition:opacity .35s ease}
+.page img.ld{opacity:1}
+header #send.bump{animation:bump .35s var(--spring)}
+header #send{animation:popIn .3s var(--spring)}
+dialog[open]{animation:dlgIn .28s var(--ease)}
+dialog[open]::backdrop{animation:bdIn .25s ease}
+.inkbar{transition:opacity .25s,transform .25s var(--ease)}
+.inkbar .tools{animation:fadeUp .25s var(--ease)}
+.res details .page{animation:reveal .4s var(--ease) both}
+.score{display:inline-block;animation:popIn .5s var(--spring) both .1s}
+.spot{transition:background .2s,border-color .2s}
+@media (prefers-reduced-motion: reduce){*,*::before,*::after{animation:none!important;transition:none!important}.page img{opacity:1}}
 @media (max-width:600px){.inkbar{top:auto;bottom:calc(150px + env(safe-area-inset-bottom));transform:none;right:6px}.inkbar button{width:38px;height:38px}}
 /* 印刷 */
 .pp{background:#fff;margin:0 auto 14px;box-shadow:0 1px 4px rgba(0,0,0,.15);line-height:0}
@@ -204,8 +254,10 @@ function setHead(t,back){
   document.title=back?t+' | 地理 合格ライン':'地理 合格ライン問題集';
   refreshSend();
 }
+let lastSendN=0;
 function refreshSend(){
   const n=Object.keys(P).length,b=document.getElementById('send');
+  if(n>lastSendN&&lastSendN>0){b.classList.remove('bump');void b.offsetWidth;b.classList.add('bump');}lastSendN=n;
   b.style.display=ui.grade==='batch'&&n?'':'none';b.textContent=`解答を送信（${n}）`;
   const s2=document.getElementById('send2');if(s2){s2.textContent=`解答を送信（${n}問）`;s2.disabled=!n;}
 }
@@ -309,7 +361,7 @@ function question(c,n){
     <div id="result"></div>
     <div class="ansbar"><div class="choices">${Array.from({length:N},(_,i)=>`<button data-k="${i+1}">${CIRC[i]}</button>`).join('')}</div>
     <div class="nav"><button class="btn sec" id="prev" ${prev?'':'disabled'}>‹ 前</button><div class="mid" id="mid"></div><button class="btn sec" id="next" ${next?'':'disabled'}>次 ›</button></div></div>`;
-  const go=x=>{if(x)location.hash=qurl(x)};
+  const go=x=>{if(x){NAVDIR=x===next?'next':x===prev?'prev':'';location.hash=qurl(x);}};
   document.getElementById('prev').onclick=()=>go(prev);
   document.getElementById('next').onclick=()=>go(next);
   const mid=document.getElementById('mid');
@@ -326,9 +378,10 @@ function question(c,n){
     done=true;const skb=document.getElementById('skip');if(skb)skb.remove();
     btns().forEach(b=>{b.classList.remove('sel');const bk=+b.dataset.k;if(bk==q.ans)b.classList.add('right');else if(bk==k)b.classList.add('pick');});
     const ok=k==q.ans;
-    const v=k==null?`<div class="verdict nt">正解は ${CIRC[q.ans-1]}</div>`:ok?`<div class="verdict ok"><span class="ok">○ 正解！</span><small>${CIRC[q.ans-1]}</small></div>`:`<div class="verdict ng"><span class="ng">× 不正解</span><small>あなたの解答 ${CIRC[k-1]} ／ 正解は <b>${CIRC[q.ans-1]}</b></small></div>`;
+    const v=k==null?`<div class="verdict nt">正解は ${CIRC[q.ans-1]}</div>`:ok?`<div class="verdict ok"><span class="ok"><span class="mkk">○</span> 正解！</span><small>${CIRC[q.ans-1]}</small></div>`:`<div class="verdict ng"><span class="ng"><span class="mkk">×</span> 不正解</span><small>あなたの解答 ${CIRC[k-1]} ／ 正解は <b>${CIRC[q.ans-1]}</b></small></div>`;
     document.getElementById('result').innerHTML=v+`<div class="page" id="apage"><img src="${q.a}.webp" alt="解説 ${q.id}"></div>`;
     attachInk(document.getElementById('apage'),q.a);
+    if(k!=null&&ok)sparks(document.querySelector('#result .verdict'));
     mid.innerHTML=next?'<button class="btn" id="next2">次の問題へ ›</button>':`<a class="btn" href="#/ch/${c.ch}">一覧へ</a>`;
     const n2=document.getElementById('next2');if(n2)n2.onclick=()=>go(next);
     setTimeout(()=>document.getElementById('result').scrollIntoView({behavior:'smooth',block:'start'}),60);
@@ -373,13 +426,15 @@ function result(){
   if(!LAST.length){$app.innerHTML='<div class="card empty">まだ送信した解答はありません</div>';return;}
   const ok=LAST.filter(x=>x.ok).length,wrong=LAST.filter(x=>!x.ok).map(x=>QMAP[x.id]).filter(Boolean);
   $app.innerHTML=`<div class="card" style="margin-bottom:12px"><div class="row" style="justify-content:space-between">
-    <div><div class="muted" style="font-size:13px">採点結果</div><div class="score">${ok}<span style="font-size:22px"> / ${LAST.length}問</span></div><div class="muted">正答率 ${Math.round(ok/LAST.length*100)}%</div></div>
+    <div><div class="muted" style="font-size:13px">採点結果</div><div class="score"><span id="scoreN">0</span><span style="font-size:22px"> / ${LAST.length}問</span></div><div class="muted">正答率 ${Math.round(ok/LAST.length*100)}%</div></div>
     <div class="row"><button class="btn" id="redo" ${wrong.length?'':'disabled'}>間違えた${wrong.length}問を解き直す</button><button class="btn sec" id="openAll">解説をすべて開く</button><a class="btn sec" href="#/">ホームへ</a></div></div>
     <div style="margin-top:10px">${bar({ok,ng:LAST.length-ok,total:LAST.length},10)}</div></div>
     <div class="res">${LAST.map(x=>{const q=QMAP[x.id];if(!q)return'';return `<details class="L${q.line}" ${x.ok?'':'open'}><summary><span class="mk ${x.ok?'ok':'ng'}">${x.ok?'○':'×'}</span><b>${q.id}</b><span class="tt">${esc(q.title||'')}</span>
       <span class="aa">あなた <b class="${x.ok?'ok':'ng'}">${CIRC[x.k-1]}</b> ／ 正解 <b>${CIRC[q.ans-1]}</b></span><a class="pill" href="${qurl(q)}" style="padding:4px 10px;font-size:12px" onclick="event.stopPropagation()">問題</a></summary>
       <div class="page"><img loading="lazy" src="${q.a}.webp" alt="解説 ${q.id}"></div></details>`}).join('')}</div>`;
   document.getElementById('redo').onclick=()=>startQueue(wrong);
+  countUp(document.getElementById('scoreN'),ok);
+  $app.querySelector('.res').classList.add('stg');
   document.getElementById('openAll').onclick=()=>$app.querySelectorAll('details').forEach(d=>d.open=true);
   window.scrollTo(0,0);
 }
@@ -566,8 +621,35 @@ function printView(c,what,range){
   window.scrollTo(0,0);
 }
 
+// ---- モーション補助
+let NAVDIR='';
+const reduce=matchMedia('(prefers-reduced-motion: reduce)');
+function animateIn(dir){
+  if(reduce.matches)return;
+  $app.classList.remove('enter','enter-next','enter-prev');void $app.offsetWidth;
+  $app.classList.add(dir==='next'?'enter-next':dir==='prev'?'enter-prev':'enter');
+  $app.querySelectorAll('.qgrid,.chgrid').forEach(g=>{g.classList.add('stg');[...g.children].forEach((el,i)=>el.style.setProperty('--d',Math.min(i*0.018,0.5)+'s'));});
+  $app.querySelectorAll('.res').forEach(g=>[...g.children].forEach((el,i)=>el.style.setProperty('--d',Math.min(i*0.04,0.6)+'s')));
+}
+function sparks(el){
+  if(!el||reduce.matches)return;
+  const cols=['#2e9e4f','#f0a531','#1f6fb5','#7b4fb5','#e05d5d'];
+  for(let i=0;i<14;i++){const sp=document.createElement('i');sp.className='spark';const a=Math.PI*2*i/14+Math.random()*.4,r=38+Math.random()*34;
+    sp.style.cssText=`background:${cols[i%cols.length]};--dx:${Math.cos(a)*r}px;--dy:${Math.sin(a)*r}px;animation-delay:${Math.random()*.08}s`;el.appendChild(sp);setTimeout(()=>sp.remove(),900);}
+}
+function countUp(el,to){if(!el)return;if(reduce.matches||!to){el.textContent=to;return;}const t0=performance.now(),D=Math.min(900,300+to*40);
+  const f=t=>{const p=Math.min(1,(t-t0)/D),e=1-Math.pow(1-p,3);el.textContent=Math.round(to*e);if(p<1)requestAnimationFrame(f);};requestAnimationFrame(f);}
+// 画像はふわっと表示
+new MutationObserver(ms=>ms.forEach(m=>m.addedNodes.forEach(n=>{if(n.nodeType!==1)return;(n.tagName==='IMG'?[n]:n.querySelectorAll('img')).forEach(im=>{
+  if(im.complete&&im.naturalWidth)im.classList.add('ld');else{im.addEventListener('load',()=>im.classList.add('ld'),{once:true});im.addEventListener('error',()=>im.classList.add('ld'),{once:true});}});}))).observe(document.body,{childList:true,subtree:true});
+
 // ---- ルーター
-function route(){
+function route(anim){
+  routeInner();
+  if(anim)animateIn(NAVDIR);
+  NAVDIR='';
+}
+function routeInner(){
   document.onkeydown=null;onOrient=null;INK.show(false);
   const h=location.hash.replace(/^#\/?/,'').split('/');
   if(h[0]==='result')return result();
@@ -578,7 +660,7 @@ function route(){
     return chapter(c,h[2]==='sum'?'sum':'q');}
   queue=null;home();window.scrollTo(0,0);
 }
-addEventListener('hashchange',route);route();
+addEventListener('hashchange',()=>route(true));route(true);
 </script>
 <script src="supabase-config.js"></script>
 <script type="module">
