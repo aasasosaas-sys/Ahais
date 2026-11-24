@@ -5,10 +5,7 @@ create table if not exists public.progress (
   updated_at timestamptz not null default now()
 );
 alter table public.progress enable row level security;
--- 自分の行だけ読み書きできる
-drop policy if exists "own progress select" on public.progress;
-drop policy if exists "own progress insert" on public.progress;
-drop policy if exists "own progress update" on public.progress;
-create policy "own progress select" on public.progress for select using (auth.uid() = user_id);
-create policy "own progress insert" on public.progress for insert with check (auth.uid() = user_id);
-create policy "own progress update" on public.progress for update using (auth.uid() = user_id) with check (auth.uid() = user_id);
+-- ログインした本人の行だけ読み書きできる
+create policy "own progress select" on public.progress for select to authenticated using ((select auth.uid()) = user_id);
+create policy "own progress insert" on public.progress for insert to authenticated with check ((select auth.uid()) = user_id);
+create policy "own progress update" on public.progress for update to authenticated using ((select auth.uid()) = user_id) with check ((select auth.uid()) = user_id);
