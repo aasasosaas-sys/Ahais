@@ -103,7 +103,13 @@ dialog::backdrop{background:rgba(0,0,0,.4)}
 .opt.on{border-color:var(--main);background:var(--main2)}
 .opt b{display:block}
 .opt span{font-size:13px;color:var(--sub)}
-@media (max-width:600px){ main{padding:12px} .ansbar{margin:12px -12px 0} .qhead h2{font-size:19px} .choices button{min-width:44px;height:46px;font-size:20px} header .t{font-size:15px} .seg button{min-width:0;flex:1;padding:8px 6px} }
+.fld{display:block;margin-bottom:10px}
+.fld span{display:block;font-size:13px;color:var(--sub);margin-bottom:4px}
+.fld input{width:100%;font:inherit;font-size:16px;padding:10px 12px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--ink)}
+.msg{font-size:13px;margin:6px 0;min-height:1em}
+.sync{font-size:12px;color:var(--sub)}
+@media (max-width:600px){ header #acct{max-width:92px;overflow:hidden;text-overflow:ellipsis} header #gear{font-size:0;padding:6px 9px} header #gear::before{content:'⚙';font-size:15px}
+ main{padding:12px} .ansbar{margin:12px -12px 0} .qhead h2{font-size:19px} .choices button{min-width:44px;height:46px;font-size:20px} header .t{font-size:15px} .seg button{min-width:0;flex:1;padding:8px 6px} }
 </style>
 </head>
 <body>
@@ -111,6 +117,7 @@ dialog::backdrop{background:rgba(0,0,0,.4)}
   <button id="back" style="display:none">‹ 戻る</button>
   <div class="t" id="title">地理 合格ライン問題集</div>
   <button id="send" style="display:none">解答を送信</button>
+  <button id="acct" title="アカウント">👤 ログイン</button>
   <button id="gear" title="設定">⚙ 設定</button>
 </header>
 <main id="app"></main>
@@ -128,6 +135,8 @@ dialog::backdrop{background:rgba(0,0,0,.4)}
   <div class="row" style="justify-content:flex-end;margin-top:16px"><button class="btn" id="dlgClose">閉じる</button></div>
 </div></dialog>
 
+<dialog id="adlg"><div class="dlg" id="adlgBody"></div></dialog>
+
 <script src="data.js"></script>
 <script>
 const CIRC="①②③④⑤⑥⑦⑧⑨";
@@ -142,7 +151,7 @@ let S=load(KEY,{});            // 解答記録 {id:{r:bool,k:選んだ番号,n:�
 let P=load(KEY+'-pending',{});  // 送信前の選択 {id:k}
 let ui=Object.assign({target:0,grade:'batch',mode:'all',theme:''},load(KEY+'-ui',{}));
 let LAST=load(KEY+'-last',[]);  // 直近の送信結果
-const save=()=>{store(KEY,S);store(KEY+'-pending',P);store(KEY+'-ui',ui);store(KEY+'-last',LAST)};
+const save=()=>{store(KEY,S);store(KEY+'-pending',P);store(KEY+'-ui',ui);store(KEY+'-last',LAST);cloudSchedule();};
 let queue=null;
 const TG=[[6,'6割'],[7,'7割'],[8,'8割'],[9,'9割'],[0,'全問']];
 const inTarget=q=>!ui.target||(q.line||9)<=ui.target;
@@ -331,6 +340,73 @@ function result(){
   window.scrollTo(0,0);
 }
 
+// ---- アカウント・サーバー保存（Supabase）
+let USER=null, syncState='', syncTimer=null;
+const adlg=document.getElementById('adlg');
+function snapshot(){return {S,P,LAST,target:ui.target,grade:ui.grade,updatedAt:Date.now()};}
+function mergeCloud(d){ // サーバーのデータと端末のデータを合わせる（問題ごとに新しい方）
+  if(!d)return false;let changed=false;
+  for(const [id,r] of Object.entries(d.S||{})){const l=S[id];if(!l||(r.at||0)>(l.at||0)){S[id]=r;changed=true;}}
+  for(const [id,k] of Object.entries(d.P||{})){if(!(id in P)&&!(S[id]&&(S[id].at||0)>(d.updatedAt||0))){P[id]=k;changed=true;}}
+  if((!LAST.length&&d.LAST&&d.LAST.length)){LAST=d.LAST;changed=true;}
+  return changed;
+}
+function cloudSchedule(){
+  if(!USER||!window.Cloud)return;
+  clearTimeout(syncTimer);setSync('保存待ち…');
+  syncTimer=setTimeout(async()=>{try{await Cloud.push(USER.uid,snapshot());setSync('サーバーに保存済み');}catch(e){setSync('保存に失敗（再接続時に再送）');console.error(e);}},1200);
+}
+function setSync(t){syncState=t;const el=document.getElementById('syncMsg');if(el)el.textContent=t;}
+function paintAcct(){
+  const b=document.getElementById('acct');
+  b.textContent=USER?'👤 '+USER.label:'👤 ログイン';
+}
+async function pullAndMerge(){
+  if(!USER||!window.Cloud)return;
+  try{setSync('サーバーから読み込み中…');const d=await Cloud.pull(USER.uid);
+    const ch=mergeCloud(d);store(KEY,S);store(KEY+'-pending',P);store(KEY+'-last',LAST);
+    await Cloud.push(USER.uid,snapshot());setSync('サーバーと同期済み');if(ch&&!dlg.open&&!adlg.open)route();}
+  catch(e){setSync('同期に失敗しました');console.error(e);}
+}
+window.onCloudUser=u=>{USER=u?{uid:u.uid,label:u.label}:null;paintAcct();if(USER)pullAndMerge();if(adlg.open)openAcct();};
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')pullAndMerge();});
+const toEmail=id=>id.includes('@')?id.trim():id.trim().toLowerCase()+'@users.geo-gokaku.app';
+const errJa=e=>{const c=(e&&e.code)||'';return ({'auth/invalid-credential':'ユーザー名かパスワードが違います','auth/wrong-password':'パスワードが違います','auth/user-not-found':'そのアカウントはありません','auth/email-already-in-use':'そのユーザー名（メール）はもう使われています','auth/weak-password':'パスワードは6文字以上にしてください','auth/invalid-email':'ユーザー名に使えない文字があります（英数字・-・_ がおすすめ）','auth/too-many-requests':'試行回数が多すぎます。少し待ってください','auth/network-request-failed':'ネットにつながっていません','invalid_credentials':'ユーザー名かパスワードが違います','user_already_exists':'そのユーザー名（メール）はもう使われています','weak_password':'パスワードは6文字以上にしてください','email_address_invalid':'ユーザー名に使えない文字があります（英数字・-・_ がおすすめ）','over_request_rate_limit':'試行回数が多すぎます。少し待ってください','over_email_send_rate_limit':'メール送信の回数制限です。少し待ってください','email_not_confirmed':'メールの確認がまだです。確認メールのリンクを開いてください','confirm':(e&&e.message)})[c]||(c==='confirm'?e.message:'エラー：'+(e&&e.message||e));};
+function openAcct(){
+  const body=document.getElementById('adlgBody');
+  if(!window.Cloud||!Cloud.ready){
+    body.innerHTML=`<h2>アカウント</h2><p>${window.Cloud&&Cloud.error?esc(Cloud.error):'サーバーがまだ設定されていません。'}</p><p class="muted" style="font-size:13px">管理者が <code>supabase-config.js</code> を設定すると、アカウントを作って進捗をサーバーに保存できるようになります。今は進捗はこの端末のブラウザに保存されています。</p><div class="row" style="justify-content:flex-end"><button class="btn" data-x>閉じる</button></div>`;
+  }else if(USER){
+    const solved=Object.keys(S).length;
+    body.innerHTML=`<h2>アカウント</h2><p style="margin:0 0 6px"><b style="font-size:18px">${esc(USER.label)}</b> でログイン中</p>
+      <p class="muted" style="font-size:13px;margin:0 0 10px">解いた問題 ${solved}問の記録がサーバーに保存されます。別の端末でも同じアカウントでログインすれば続きから解けます。</p>
+      <div class="sync" id="syncMsg">${esc(syncState)}</div>
+      <div class="row" style="justify-content:space-between;margin-top:16px"><button class="btn sec" id="logout">ログアウト</button><div class="row"><button class="btn sec" id="syncNow">今すぐ同期</button><button class="btn" data-x>閉じる</button></div></div>`;
+    body.querySelector('#logout').onclick=async()=>{if(!confirm('ログアウトしますか？（この端末の記録は残ります）'))return;await Cloud.logout();};
+    body.querySelector('#syncNow').onclick=()=>pullAndMerge();
+  }else{
+    body.innerHTML=`<h2>ログイン / アカウント作成</h2>
+      <p class="muted" style="font-size:13px;margin:0 0 12px">アカウントを作ると、解いた記録がサーバーに保存され、スマホ・iPad・PCどれからでも続きができます。今この端末にある記録も引き継がれます。</p>
+      <label class="fld"><span>ユーザー名（またはメールアドレス）</span><input id="aid" autocomplete="username" autocapitalize="off" spellcheck="false" placeholder="例：taro2026"></label>
+      <label class="fld"><span>パスワード（6文字以上）</span><input id="apw" type="password" autocomplete="current-password"></label>
+      <div class="msg ng" id="amsg"></div>
+      <div class="row" style="justify-content:space-between;margin-top:8px"><button class="btn sec" data-x>閉じる</button><div class="row"><button class="btn sec" id="signup">新しく作る</button><button class="btn" id="login">ログイン</button></div></div>
+      <p class="muted" style="font-size:12px;margin:12px 0 0">※ユーザー名で作った場合、パスワードを忘れると復旧できません。メールアドレスで作るとパスワード再設定ができます。<a href="#" id="reset">パスワードを忘れた（メールのみ）</a></p>`;
+    const id=()=>body.querySelector('#aid').value,pw=()=>body.querySelector('#apw').value,msg=t=>body.querySelector('#amsg').textContent=t;
+    const run=async(fn,label)=>{if(!id().trim()||!pw()){msg('ユーザー名とパスワードを入れてください');return;}msg(label+'中…');
+      try{await fn(toEmail(id()),pw());}catch(e){msg(errJa(e));}};
+    body.querySelector('#login').onclick=()=>run(Cloud.login,'ログイン');
+    body.querySelector('#signup').onclick=()=>run(Cloud.signup,'作成');
+    body.querySelector('#apw').onkeydown=e=>{if(e.key==='Enter')body.querySelector('#login').click();};
+    body.querySelector('#reset').onclick=async e=>{e.preventDefault();if(!id().includes('@')){msg('パスワード再設定はメールアドレスで作ったアカウントのみです');return;}
+      try{await Cloud.reset(id().trim());msg('再設定メールを送りました');}catch(er){msg(errJa(er));}};
+  }
+  body.querySelectorAll('[data-x]').forEach(b=>b.onclick=()=>adlg.close());
+  if(!adlg.open)adlg.showModal();
+}
+document.getElementById('acct').onclick=openAcct;
+adlg.addEventListener('close',()=>route());
+
 // ---- ルーター
 function route(){
   document.onkeydown=null;
@@ -343,6 +419,33 @@ function route(){
   queue=null;home();window.scrollTo(0,0);
 }
 addEventListener('hashchange',route);route();
+</script>
+<script src="supabase-config.js"></script>
+<script type="module">
+// Supabase（アカウント・進捗のサーバー保存）。supabase-config.js が未設定なら何もしない
+const cfg=window.SUPABASE_CONFIG||{};
+window.Cloud={ready:false};
+if(cfg.url&&cfg.anonKey){
+  try{
+    const {createClient}=await import('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/+esm');
+    const sb=createClient(cfg.url,cfg.anonKey,{auth:{persistSession:true,autoRefreshToken:true}});
+    const chk=({data,error})=>{if(error)throw error;return data;};
+    window.Cloud={ready:true,
+      login:async(e,p)=>chk(await sb.auth.signInWithPassword({email:e,password:p})),
+      signup:async(e,p)=>{const d=chk(await sb.auth.signUp({email:e,password:p}));
+        if(!d.session)throw {code:'confirm',message:'確認メールを送りました。メール内のリンクを開いてからログインしてください。'};return d;},
+      logout:async()=>chk(await sb.auth.signOut()),
+      reset:async e=>chk(await sb.auth.resetPasswordForEmail(e,{redirectTo:location.origin+location.pathname})),
+      pull:async uid=>{const d=chk(await sb.from('progress').select('data').eq('user_id',uid).maybeSingle());return d?d.data:null;},
+      push:async(uid,data)=>chk(await sb.from('progress').upsert({user_id:uid,data,updated_at:new Date().toISOString()})),
+    };
+    let last=null;
+    const fire=u=>{const id=u?u.id:null;if(id===last)return;last=id;
+      window.onCloudUser(u?{uid:u.id,label:(u.email||'').replace(/@users\.geo-gokaku\.app$/,'')}:null);};
+    sb.auth.onAuthStateChange((_ev,session)=>fire(session?session.user:null));
+    const {data:{session}}=await sb.auth.getSession();fire(session?session.user:null);
+  }catch(e){console.error(e);window.Cloud={ready:false,error:'サーバーに接続できませんでした：'+(e.message||e)};}
+}
 </script>
 </body>
 </html>
