@@ -4,6 +4,14 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="地理合格">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#0f5f6e">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+<link rel="icon" href="icons/favicon-32.png" sizes="32x32" type="image/png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 <title>地理 合格ライン問題集</title>
 <style>
 :root{
@@ -204,6 +212,7 @@ dialog[open]::backdrop{animation:bdIn .25s ease}
 <body>
 <header>
   <button id="back" style="display:none">‹ 戻る</button>
+  <img id="logo" src="icons/icon.svg" alt="" width="30" height="30" style="border-radius:8px;flex:none">
   <div class="t" id="title">地理 合格ライン問題集</div>
   <button id="send" style="display:none">解答を送信</button>
   <button id="acct" title="アカウント">👤 ログイン</button>
@@ -262,6 +271,7 @@ document.getElementById('send').onclick=()=>submitAll();
 function setHead(t,back){
   document.getElementById('title').textContent=t;
   document.getElementById('back').style.display=back?'':'none';
+  document.getElementById('logo').style.display=back?'none':'';
   document.title=back?t+' | 地理 合格ライン':'地理 合格ライン問題集';
   refreshSend();
 }
