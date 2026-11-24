@@ -69,9 +69,20 @@ h3.sec{margin:18px 0 8px;font-size:15px;color:var(--sub)}
 .spot.pick{background:rgba(210,60,60,.15);border-color:var(--ng)}
 .spot.right{background:rgba(46,158,79,.18);border-color:var(--ok)}
 .port{max-width:820px;margin:0 auto}
-.ansbar{position:sticky;bottom:0;z-index:15;margin:12px -16px 0;padding:10px 16px calc(10px + env(safe-area-inset-bottom));background:color-mix(in srgb,var(--bg) 90%,transparent);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);border-top:1px solid var(--line)}
+.ansbar{position:sticky;bottom:0;z-index:15;margin:10px -16px 0;padding:8px 12px calc(8px + env(safe-area-inset-bottom));background:var(--card);border-top:1px solid var(--line);box-shadow:0 -4px 16px rgba(0,0,0,.06)}
+.abar{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:8px;max-width:1180px;margin:0 auto}
+.abar .mid{display:flex;align-items:center;justify-content:center;gap:10px;flex-wrap:wrap}
+.abar .nb{width:46px;height:46px;border-radius:12px;border:1px solid var(--line);background:var(--card);font-size:24px;line-height:1;padding:0}
+.abar .aux{display:flex;align-items:center;gap:6px}
+.abar .cnt{font-size:12px;color:var(--sub);white-space:nowrap}
+.pill.sm{padding:5px 10px;font-size:12px}
+:root{--fitH:calc(100dvh - 150px - env(safe-area-inset-bottom))}
+@supports not (height:100dvh){:root{--fitH:calc(100vh - 150px)}}
+.page.fit{width:min(100%,calc(var(--fitH) * var(--ar)));aspect-ratio:var(--ar);margin:0 auto}
+.page.fit>img{position:absolute;max-width:none}
+.page.wide>img{position:absolute;max-width:none}
 .choices{display:flex;gap:8px;justify-content:center;flex-wrap:wrap}
-.choices button{min-width:54px;height:50px;border-radius:12px;border:2px solid var(--line);background:var(--card);font-size:22px;font-weight:700}
+.choices button{min-width:50px;height:46px;border-radius:12px;border:2px solid var(--line);background:var(--card);font-size:22px;font-weight:700}
 .choices button.sel{border-color:var(--pick);background:var(--pickbg);color:var(--pick)}
 .choices button.right{border-color:var(--ok);background:var(--okbg);color:var(--ok)}
 .choices button.pick{border-color:var(--ng);background:var(--ngbg);color:var(--ng)}
@@ -171,7 +182,7 @@ dialog[open]::backdrop{animation:bdIn .25s ease}
 .score{display:inline-block;animation:popIn .5s var(--spring) both .1s}
 .spot{transition:background .2s,border-color .2s}
 @media (prefers-reduced-motion: reduce){*,*::before,*::after{animation:none!important;transition:none!important}.page img{opacity:1}}
-@media (max-width:600px){.inkbar{top:auto;bottom:calc(150px + env(safe-area-inset-bottom));transform:none;right:6px}.inkbar button{width:38px;height:38px}}
+@media (max-width:600px){.inkbar{top:auto;bottom:calc(200px + env(safe-area-inset-bottom));transform:none;right:6px}.inkbar button{width:38px;height:38px}}
 /* 印刷 */
 .pp{background:#fff;margin:0 auto 14px;box-shadow:0 1px 4px rgba(0,0,0,.15);line-height:0}
 .pp img{width:100%;display:block}
@@ -355,12 +366,14 @@ function question(c,n){
   const list=queue&&queue.includes(q.id)?queue:c.questions.filter(inTarget).map(x=>x.id).concat(inTarget(q)?[]:[q.id]);
   const pos=list.indexOf(q.id),prev=QMAP[list[pos-1]],next=QMAP[list[pos+1]];
   const N=q.n||4, batch=ui.grade==='batch', r=res(q.id);
-  $app.innerHTML=`<div class="qhead"><h2>${q.id}</h2>${q.line?`<span class="lbadge B${q.line}">${q.line}割ライン</span>`:''}<span class="muted" style="font-size:13px">${esc(q.src||'')}</span>
-    <span class="muted" style="margin-left:auto;font-size:13px">${pos+1} / ${list.length}${r?` ・前回 <b class="${r.r?'ok':'ng'}">${r.r?'○':'×'}</b>`:''}</span></div>
-    <div id="qwrap">${qPageHtml(q)}</div>
+  $app.innerHTML=`<div id="qwrap">${qPageHtml(q)}</div>
     <div id="result"></div>
-    <div class="ansbar"><div class="choices">${Array.from({length:N},(_,i)=>`<button data-k="${i+1}">${CIRC[i]}</button>`).join('')}</div>
-    <div class="nav"><button class="btn sec" id="prev" ${prev?'':'disabled'}>‹ 前</button><div class="mid" id="mid"></div><button class="btn sec" id="next" ${next?'':'disabled'}>次 ›</button></div></div>`;
+    <div class="ansbar"><div class="abar">
+      <button class="nb" id="prev" ${prev?'':'disabled'} aria-label="前の問題">‹</button>
+      <div class="mid"><div class="choices">${Array.from({length:N},(_,i)=>`<button data-k="${i+1}">${CIRC[i]}</button>`).join('')}</div>
+        <span id="mid" style="display:contents"></span>
+        <span class="aux"><span class="cnt">${pos+1}/${list.length}${r?` <b class="${r.r?'ok':'ng'}">${r.r?'○':'×'}</b>`:''}</span><button class="pill sm" id="skip">解説</button><button class="pill sm" id="fitBtn" title="ページの大きさ">${ui.wide?'全体':'拡大'}</button></span></div>
+      <button class="nb" id="next" ${next?'':'disabled'} aria-label="次の問題">›</button></div></div>`;
   const go=x=>{if(x){NAVDIR=x===next?'next':x===prev?'prev':'';location.hash=qurl(x);}};
   document.getElementById('prev').onclick=()=>go(prev);
   document.getElementById('next').onclick=()=>go(next);
@@ -368,27 +381,26 @@ function question(c,n){
   const btns=()=>$app.querySelectorAll('[data-k]');
   let done=false;
   const paintSel=k=>btns().forEach(b=>b.classList.toggle('sel',+b.dataset.k===k));
-  const midBatch=()=>{const k=P[q.id];
-    mid.innerHTML=(k?`<span class="pk" style="align-self:center"><b>${CIRC[k-1]}</b> を選択中</span>`:`<span class="muted" style="align-self:center">番号を選んでください</span>`)+
-      `<button class="btn send" id="send2"></button>`+(k?`<button class="pill" id="clr" style="font-size:12px">選択を外す</button>`:'');
+  const midBatch=()=>{
+    mid.innerHTML=`<button class="btn send" id="send2"></button>`;
     document.getElementById('send2').onclick=()=>submitAll();
-    const cl=document.getElementById('clr');if(cl)cl.onclick=()=>{delete P[q.id];save();paintSel(0);midBatch();refreshSend();};
     refreshSend();};
   const reveal=(k)=>{ // k=選んだ番号 / null=解説だけ
-    done=true;const skb=document.getElementById('skip');if(skb)skb.remove();
+    done=true;const skb=document.getElementById('skip');if(skb)skb.style.display='none';
     btns().forEach(b=>{b.classList.remove('sel');const bk=+b.dataset.k;if(bk==q.ans)b.classList.add('right');else if(bk==k)b.classList.add('pick');});
     const ok=k==q.ans;
     const v=k==null?`<div class="verdict nt">正解は ${CIRC[q.ans-1]}</div>`:ok?`<div class="verdict ok"><span class="ok"><span class="mkk">○</span> 正解！</span><small>${CIRC[q.ans-1]}</small></div>`:`<div class="verdict ng"><span class="ng"><span class="mkk">×</span> 不正解</span><small>あなたの解答 ${CIRC[k-1]} ／ 正解は <b>${CIRC[q.ans-1]}</b></small></div>`;
     document.getElementById('result').innerHTML=v+`<div class="page" id="apage"><img src="${q.a}.webp" alt="解説 ${q.id}"></div>`;
     attachInk(document.getElementById('apage'),q.a);
     if(k!=null&&ok)sparks(document.querySelector('#result .verdict'));
-    mid.innerHTML=next?'<button class="btn" id="next2">次の問題へ ›</button>':`<a class="btn" href="#/ch/${c.ch}">一覧へ</a>`;
+    mid.innerHTML=next?'<button class="btn" id="next2">次へ ›</button>':`<a class="btn" href="#/ch/${c.ch}">一覧へ</a>`;
     const n2=document.getElementById('next2');if(n2)n2.onclick=()=>go(next);
     setTimeout(()=>document.getElementById('result').scrollIntoView({behavior:'smooth',block:'start'}),60);
   };
   const pickK=k=>{
     if(done)return;
-    if(batch){P[q.id]=k;save();paintSel(k);midBatch();
+    if(batch){if(P[q.id]===k){delete P[q.id];save();paintSel(0);refreshSend();return;} // もう一度押すと選択解除
+      P[q.id]=k;save();paintSel(k);midBatch();
       if(next&&ui.autoNext)setTimeout(()=>go(next),250);
       return;}
     record(q,k);save();reveal(k);
@@ -403,10 +415,9 @@ function question(c,n){
     const nb=[...document.querySelectorAll('#qwrap [data-k]')];nb.forEach(b=>{const m=[...btns()].find(x=>x.closest('.choices')&&x.dataset.k===b.dataset.k);if(m)b.className='spot '+[...m.classList].filter(x=>x!=='').join(' ');});
     bindBtns();mountQ();};
   if(batch){paintSel(P[q.id]||0);midBatch();}
-  else mid.innerHTML='<span class="muted" style="align-self:center">番号を押すとすぐ採点</span>';
-  const sk=document.createElement('button');sk.className='pill';sk.id='skip';sk.textContent='解説だけ見る';sk.style.cssText='display:block;margin:8px auto 0;font-size:12px';
-  sk.onclick=()=>{if(!done){delete P[q.id];save();reveal(null);refreshSend();}sk.remove();};
-  $app.querySelector('.ansbar').appendChild(sk);
+  const sk=document.getElementById('skip');
+  sk.onclick=()=>{if(!done){delete P[q.id];save();reveal(null);refreshSend();}};
+  document.getElementById('fitBtn').onclick=()=>{ui.wide=!ui.wide;save();document.getElementById('fitBtn').textContent=ui.wide?'全体':'拡大';onOrient();};
   document.onkeydown=e=>{if(dlg.open)return;const d=parseInt(e.key);if(d>=1&&d<=N)pickK(d);else if(e.key==='ArrowRight')go(next);else if(e.key==='ArrowLeft')go(prev);else if(e.key==='Enter'&&batch&&Object.keys(P).length)submitAll();};
   window.scrollTo(0,0);
 }
@@ -512,8 +523,13 @@ const mqPort=matchMedia('(orientation: portrait)');
 const isPort=()=>ui.view==='port'||(ui.view!=='land'&&mqPort.matches);
 function qImg(q){const p=isPort()&&q.pq;return {src:p?q.pq:q.q,spots:(p?q.spotsP:q.spots)||[],port:!!p};}
 function sumPages(c){const p=isPort()&&c.summaryP&&c.summaryP.length;return {list:p?c.summaryP:c.summary,port:!!p};}
-function qPageHtml(q){const im=qImg(q);
-  return `<div class="page ${im.port?'port':''}"><img src="${im.src}.webp" alt="問題 ${q.id}">${im.spots.map(s=>`<button class="spot" data-k="${s.k}" aria-label="${CIRC[s.k-1]}" style="left:${s.x}%;top:${s.y}%;width:${s.w}%;height:${s.h}%"></button>`).join('')}</div>`;}
+// ページの余白を切り落として画面に収める（t,b,l,r＝上下左右の切り落とし割合）
+const CROP={land:{t:.05,b:.055,l:.035,r:.035,ar:841.92/594.96},port:{t:.03,b:.035,l:.05,r:.05,ar:594.96/841.92}};
+function qPageHtml(q){const im=qImg(q),C=CROP[im.port?'port':'land'];
+  const kw=1-C.l-C.r,kh=1-C.t-C.b,ar=C.ar*kw/kh,f=n=>+n.toFixed(3);
+  const imgCss=`width:${f(100/kw)}%;left:${f(-C.l/kw*100)}%;top:${f(-C.t/kh*100)}%`;
+  const cls=ui.wide?'wide':'fit';
+  return `<div class="page ${cls}" style="--ar:${f(ar)};${ui.wide?'aspect-ratio:'+f(ar):''}"><img src="${im.src}.webp" alt="問題 ${q.id}" style="${imgCss}">${im.spots.map(s=>`<button class="spot" data-k="${s.k}" aria-label="${CIRC[s.k-1]}" style="left:${f((s.x/100-C.l)/kw*100)}%;top:${f((s.y/100-C.t)/kh*100)}%;width:${f(s.w/kw)}%;height:${f(s.h/kh)}%"></button>`).join('')}</div>`;}
 let lastPort=isPort();
 function orientChanged(){const p=isPort();if(p===lastPort)return;lastPort=p;
   if(dlg.open||adlg.open)return;
