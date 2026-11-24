@@ -103,24 +103,35 @@ def main(src):
         if not m:
             print("skip", pdf, t); continue
         ch, name, kind, ver = int(m.group(1)), m.group(2), m.group(3), m.group(4)
-        key = (ch, kind)
-        if key not in docs or (ver == "iPad横" and docs[key][1] != "iPad横"):
-            docs[key] = (pdf, ver, name)
+        if kind == "解答解説":
+            key = (ch, kind, "")
+            if key not in docs or (ver == "iPad横" and docs[key][1] != "iPad横"):
+                docs[key] = (pdf, ver, name)
+        else:
+            docs[(ch, kind, ver)] = (pdf, ver, name)  # 本冊は横(iPad)・縦(A4)両方使う
     chapters = {}
-    for (ch, kind), (pdf, ver, name) in sorted(docs.items()):
+    for (ch, kind, _v), (pdf, ver, name) in sorted(docs.items(), key=lambda kv: (kv[0][0], kv[0][1] != "本冊", kv[0][2] != "iPad横")):
         print(f"第{ch}章 {kind} ({ver}) {pdf}")
-        C = chapters.setdefault(ch, dict(ch=ch, name=name.replace("・", "・"), questions={}, summary=[], orient=None, hasBook=False, hasAns=False))
+        C = chapters.setdefault(ch, dict(ch=ch, name=name, questions={}, summary=[], summaryP=[], hasBook=False, hasAns=False))
         pages = parse_bbox(pdf)
         pages_idx = {}
         d = f"img/ch{ch}"
         if kind == "本冊":
             C["hasBook"] = True
-            C["orient"] = "land" if ver == "iPad横" else "port"
+            land = ver == "iPad横"
+            sfx, pre = ("", "") if land else ("P", "p")
             for i, p in enumerate(pages):
                 qid = page_qid(p)
                 if qid and "割ライン" in p["text"]:
                     q = C["questions"].setdefault(qid, dict(id=qid))
                     txt = p["text"]
+                    q[pre + "q"] = f"{d}/{pre}q{qid.split('-')[1]}"
+                    m2 = re.search(r"([①-⑨])\s*[〜～]\s*([①-⑨])\s*の\s*うち", txt.replace("\n", ""))
+                    n = CIRC.index(m2.group(2)) + 1 if m2 else max([CIRC.index(c) + 1 for c in txt if c in CIRC] or [4])
+                    q["spots" + sfx] = hotspots(p, n)
+                    pages_idx[i] = f"{pre}q{qid.split('-')[1]}"
+                    if "n" in q:
+                        continue
                     lm = re.search(r"([6789])割ライン", txt); q["line"] = int(lm.group(1)) if lm else 0
                     cm = re.search(r"過去問に\s*(\d+)回", txt); q["count"] = int(cm.group(1)) if cm else None
                     m2 = re.search(r"([①-⑨])\s*[〜～]\s*([①-⑨])\s*の\s*うち", txt.replace("\n", ""))
@@ -137,12 +148,9 @@ def main(src):
                                 if t_ and "割ライン" not in t_ and "過去問に" not in t_ and "回出た" not in t_ and not re.fullmatch(r"図\d*", t_):
                                     src_words.append((w["y0"] // 8, w["x0"], t_))
                     q["src"] = " ".join(t for _, _, t in sorted(src_words))
-                    q["q"] = f"{d}/q{qid.split('-')[1]}"
-                    q["spots"] = hotspots(p, n)
-                    pages_idx[i] = f"q{qid.split('-')[1]}"
                 else:
-                    name_ = f"s{i+1:02d}"
-                    C["summary"].append(f"{d}/{name_}")
+                    name_ = f"{pre}s{i+1:02d}"
+                    C["summary" + sfx].append(f"{d}/{name_}")
                     pages_idx[i] = name_
         else:
             C["hasAns"] = True
