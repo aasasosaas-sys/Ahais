@@ -87,8 +87,10 @@ h3.sec{margin:18px 0 8px;font-size:15px;color:var(--sub)}
 :root{--fitH:calc(100dvh - 150px - env(safe-area-inset-bottom))}
 @supports not (height:100dvh){:root{--fitH:calc(100vh - 150px)}}
 .page.fit{width:min(100%,calc(var(--fitH) * var(--ar)));aspect-ratio:var(--ar);margin:0 auto}
-.page.fit>img{position:absolute;max-width:none}
-.page.wide>img{position:absolute;max-width:none}
+.page>.zin{position:relative;transform-origin:0 0;will-change:transform}
+.page.fit>.zin,.page.wide>.zin{position:absolute;inset:0}
+.page.fit .zin>img,.page.wide .zin>img,.page.fit>img,.page.wide>img{position:absolute;max-width:none}
+.page.zoomed{box-shadow:0 0 0 3px var(--main)}
 .choices{display:flex;gap:8px;justify-content:center;flex-wrap:wrap}
 .choices button{min-width:50px;height:46px;border-radius:12px;border:2px solid var(--line);background:var(--card);font-size:22px;font-weight:700}
 .choices button.sel{border-color:var(--pick);background:var(--pickbg);color:var(--pick)}
@@ -490,8 +492,9 @@ async function pullAndMerge(){
 }
 window.onCloudUser=u=>{USER=u?{uid:u.uid,label:u.label}:null;paintAcct();if(USER)pullAndMerge();if(adlg.open)openAcct();};
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')pullAndMerge();});
-const toEmail=id=>id.includes('@')?id.trim():id.trim().toLowerCase()+'@users.geo-gokaku.app';
-const errJa=e=>{const c=(e&&e.code)||'';return ({'auth/invalid-credential':'ユーザー名かパスワードが違います','auth/wrong-password':'パスワードが違います','auth/user-not-found':'そのアカウントはありません','auth/email-already-in-use':'そのユーザー名（メール）はもう使われています','auth/weak-password':'パスワードは6文字以上にしてください','auth/invalid-email':'ユーザー名に使えない文字があります（英数字・-・_ がおすすめ）','auth/too-many-requests':'試行回数が多すぎます。少し待ってください','auth/network-request-failed':'ネットにつながっていません','invalid_credentials':'ユーザー名かパスワードが違います','user_already_exists':'そのユーザー名（メール）はもう使われています','weak_password':'パスワードは6文字以上にしてください','email_address_invalid':'ユーザー名に使えない文字があります（英数字・-・_ がおすすめ）','over_request_rate_limit':'試行回数が多すぎます。少し待ってください','over_email_send_rate_limit':'メール送信の回数制限です。少し待ってください','email_not_confirmed':'メールの確認がまだです。確認メールのリンクを開いてください','confirm':(e&&e.message)})[c]||(c==='confirm'?e.message:'エラー：'+(e&&e.message||e));};
+let lastId='';
+const toEmail=id=>{lastId=id;return id.includes('@')?id.trim():id.trim().toLowerCase()+'@users.geo-gokaku.app';};
+const errJa=e=>{const c=(e&&e.code)||'';if((c==='over_email_send_rate_limit'||c==='email_address_invalid')&&lastId&&!lastId.includes('@'))return 'ユーザー名での登録は、いま準備中です（管理者の設定待ち）。メールアドレスで作るか、少し待ってから試してください';return ({'auth/invalid-credential':'ユーザー名かパスワードが違います','auth/wrong-password':'パスワードが違います','auth/user-not-found':'そのアカウントはありません','auth/email-already-in-use':'そのユーザー名（メール）はもう使われています','auth/weak-password':'パスワードは6文字以上にしてください','auth/invalid-email':'ユーザー名に使えない文字があります（英数字・-・_ がおすすめ）','auth/too-many-requests':'試行回数が多すぎます。少し待ってください','auth/network-request-failed':'ネットにつながっていません','invalid_credentials':'ユーザー名かパスワードが違います','user_already_exists':'そのユーザー名（メール）はもう使われています','weak_password':'パスワードは6文字以上にしてください','email_address_invalid':'ユーザー名に使えない文字があります（英数字・-・_ がおすすめ）','over_request_rate_limit':'試行回数が多すぎます。少し待ってください','over_email_send_rate_limit':'メール送信の回数制限です。少し待ってください','email_not_confirmed':'メールの確認がまだです。確認メールのリンクを開いてください','confirm':(e&&e.message)})[c]||(c==='confirm'?e.message:'エラー：'+(e&&e.message||e));};
 function openAcct(){
   const body=document.getElementById('adlgBody');
   if(!window.Cloud||!Cloud.ready){
@@ -549,24 +552,24 @@ dlg.addEventListener('close',()=>{lastPort=isPort();});
 
 // ---- その場だけの書き込み（サーバー・端末どちらにも保存しない）
 const INK=(()=>{
-  const st={on:false,tool:'pen',color:'#d23c3c',finger:false,qid:null,strokes:{},canv:[]};
+  const st={on:false,tool:'pen',color:'#d23c3c',penSeen:false,qid:null,strokes:{},canv:[]};
   const COLORS=['#1d2b30','#d23c3c','#1f6fb5'];
   const bar=document.createElement('div');bar.className='inkbar';bar.style.display='none';
   bar.innerHTML=`<button data-a="toggle" title="書き込み">✏️</button><div class="tools">
     <hr><button data-tool="pen" title="ペン">🖊</button><button data-tool="marker" title="マーカー">🖍</button><button data-tool="eraser" title="消しゴム">🧽</button>
     <hr>${COLORS.map(c=>`<button data-color="${c}" title="色"><span class="dot" style="background:${c}"></span></button>`).join('')}
     <hr><button data-a="undo" title="ひとつ戻す">↶</button><button data-a="clear" title="全部消す">🗑</button>
-    <button data-a="finger" title="指でも書く">☝<small></small></button></div>`;
+    <hr><button data-a="zoom" title="ズームを戻す">1x</button></div>`;
   document.body.appendChild(bar);
   const paint=()=>{bar.querySelector('[data-a=toggle]').classList.toggle('on',st.on);document.body.classList.toggle('inking',st.on);
     bar.querySelectorAll('[data-tool]').forEach(b=>b.classList.toggle('on',b.dataset.tool===st.tool));
     bar.querySelectorAll('[data-color]').forEach(b=>b.classList.toggle('on',b.dataset.color===st.color));
-    const f=bar.querySelector('[data-a=finger]');f.classList.toggle('on',st.finger);f.querySelector('small').textContent=st.finger?'指OK':'ペンのみ';};
+  };
   bar.onclick=e=>{const b=e.target.closest('button');if(!b)return;
     if(b.dataset.tool)st.tool=b.dataset.tool;
     else if(b.dataset.color){st.color=b.dataset.color;if(st.tool==='eraser')st.tool='pen';}
     else if(b.dataset.a==='toggle')st.on=!st.on;
-    else if(b.dataset.a==='finger')st.finger=!st.finger;
+    else if(b.dataset.a==='zoom')document.querySelectorAll('.page').forEach(p=>p.resetZoom&&p.resetZoom());
     else if(b.dataset.a==='undo'){let best=null,key=null;for(const [k,a] of Object.entries(st.strokes)){const t=a.length&&a[a.length-1].t;if(t&&(!best||t>best)){best=t;key=k;}}if(key){st.strokes[key].pop();redrawAll();}}
     else if(b.dataset.a==='clear'){if(Object.values(st.strokes).some(a=>a.length)&&confirm('書き込みを全部消しますか？')){st.strokes={};redrawAll();}}
     paint();};
@@ -578,37 +581,67 @@ const INK=(()=>{
 })();
 function attachInk(pageEl,key){
   if(!pageEl)return;
-  const st=INK.st;const cv=document.createElement('canvas');cv.className='ink';pageEl.appendChild(cv);
+  const st=INK.st;
+  // ズーム用の内側レイヤー（画像・選択肢・書き込みをまとめて拡大する）
+  let zin=pageEl.querySelector(':scope>.zin');
+  if(!zin){zin=document.createElement('div');zin.className='zin';while(pageEl.firstChild)zin.appendChild(pageEl.firstChild);pageEl.appendChild(zin);}
+  const cv=document.createElement('canvas');cv.className='ink';zin.appendChild(cv);
   const ctx=cv.getContext('2d');
   const list=()=>st.strokes[key]||(st.strokes[key]=[]);
-  const size=()=>{const r=pageEl.getBoundingClientRect(),d=window.devicePixelRatio||1;cv.width=Math.round(r.width*d);cv.height=Math.round(r.height*d);draw();};
-  const drawStroke=s=>{const W=cv.width,H=cv.height;if(s.pts.length<1)return;
+  const size=()=>{const W=pageEl.clientWidth,H=pageEl.clientHeight,d=Math.min(window.devicePixelRatio||1,2);cv.width=Math.round(W*d);cv.height=Math.round(H*d);draw();};
+  const drawStroke=s=>{const W=cv.width,H=cv.height;if(!s.pts.length)return;
     ctx.save();ctx.lineCap='round';ctx.lineJoin='round';
-    if(s.tool==='marker'){ctx.globalAlpha=.32;ctx.strokeStyle=s.color==='#1d2b30'?'#f2c200':s.color;}else ctx.strokeStyle=s.color;
+    if(s.tool==='marker'){ctx.globalAlpha=.3;ctx.strokeStyle=s.color==='#1d2b30'?'#f2c200':s.color;}else ctx.strokeStyle=s.color;
     const base=s.w*W/1000;
-    ctx.beginPath();ctx.moveTo(s.pts[0][0]*W,s.pts[0][1]*H);
-    if(s.tool==='marker'||s.pts.length<3){ctx.lineWidth=base;for(const p of s.pts)ctx.lineTo(p[0]*W,p[1]*H);ctx.stroke();}
-    else{for(let i=1;i<s.pts.length;i++){const a=s.pts[i-1],b=s.pts[i];ctx.beginPath();ctx.lineWidth=base*(0.55+(b[2]??0.5));ctx.moveTo(a[0]*W,a[1]*H);ctx.lineTo(b[0]*W,b[1]*H);ctx.stroke();}}
+    if(s.pts.length===1){ctx.fillStyle=ctx.strokeStyle;ctx.beginPath();ctx.arc(s.pts[0][0]*W,s.pts[0][1]*H,base/2,0,7);ctx.fill();ctx.restore();return;}
+    if(s.tool==='marker'){ctx.lineWidth=base;ctx.beginPath();ctx.moveTo(s.pts[0][0]*W,s.pts[0][1]*H);for(const p of s.pts)ctx.lineTo(p[0]*W,p[1]*H);ctx.stroke();}
+    else{for(let i=1;i<s.pts.length;i++){const a=s.pts[i-1],b=s.pts[i];ctx.beginPath();ctx.lineWidth=base*(0.6+((a[2]+b[2])/2)*0.8);ctx.moveTo(a[0]*W,a[1]*H);ctx.lineTo(b[0]*W,b[1]*H);ctx.stroke();}}
     ctx.restore();};
   const draw=()=>{ctx.clearRect(0,0,cv.width,cv.height);list().forEach(drawStroke);};
-  const entry={cv,draw};INK.st.canv.push(entry);
+  INK.st.canv.push({cv,draw});
   new ResizeObserver(size).observe(pageEl);size();
-  let cur=null,scrollY0=null;
+  // ---- ズーム状態
+  const Z={s:1,tx:0,ty:0};
+  const applyZ=()=>{const W=pageEl.clientWidth,H=pageEl.clientHeight;
+    if(Z.s<=1.02){Z.s=1;Z.tx=0;Z.ty=0;}
+    Z.tx=Math.min(0,Math.max(W*(1-Z.s),Z.tx));Z.ty=Math.min(0,Math.max(H*(1-Z.s),Z.ty));
+    zin.style.transform=Z.s===1?'':`translate(${Z.tx}px,${Z.ty}px) scale(${Z.s})`;pageEl.classList.toggle('zoomed',Z.s>1);};
+  pageEl.resetZoom=()=>{Z.s=1;applyZ();};
+  // ---- 入力
+  let cur=null,curId=null,g=null;const touches=new Map();
   const pos=e=>{const r=cv.getBoundingClientRect();return [(e.clientX-r.left)/r.width,(e.clientY-r.top)/r.height,e.pointerType==='pen'?(e.pressure||0.5):0.5];};
-  const erase=p=>{const a=list(),R=0.018;const n=a.length;st.strokes[key]=a.filter(s=>!s.pts.some(q=>Math.hypot(q[0]-p[0],(q[1]-p[1])*cv.height/cv.width)<R));if(st.strokes[key].length!==n)draw();};
+  const erase=p=>{const a=list(),R=0.018/Math.max(1,Z.s*0.7);const n=a.length;st.strokes[key]=a.filter(s=>!s.pts.some(q=>Math.hypot(q[0]-p[0],(q[1]-p[1])*cv.height/cv.width)<R));if(st.strokes[key].length!==n)draw();};
+  const startStroke=e=>{curId=e.pointerId;const p=pos(e);
+    if(st.tool==='eraser'){cur={eraser:true};erase(p);return;}
+    cur={tool:st.tool,color:st.color,w:(st.tool==='marker'?14:2.4)/Math.sqrt(Z.s),pts:[p],t:Date.now(),touch:e.pointerType==='touch'};list().push(cur);draw();};
+  const cancelTouchStroke=()=>{if(cur&&cur.touch&&!cur.eraser){const a=list();const i=a.indexOf(cur);if(i>=0)a.splice(i,1);draw();}cur=null;curId=null;};
+  const twoInfo=()=>{const [a,b]=[...touches.values()];return {d:Math.hypot(a.x-b.x,a.y-b.y)||1,mx:(a.x+b.x)/2,my:(a.y+b.y)/2};};
   cv.addEventListener('pointerdown',e=>{
     if(!st.on)return;
-    if(e.pointerType==='touch'&&!st.finger){scrollY0=e.clientY;cv.setPointerCapture(e.pointerId);return;} // 指はスクロール
-    e.preventDefault();cv.setPointerCapture(e.pointerId);const p=pos(e);
-    if(st.tool==='eraser'){cur={eraser:true};erase(p);return;}
-    cur={tool:st.tool,color:st.color,w:st.tool==='marker'?14:2.6,pts:[p],t:Date.now()};list().push(cur);});
+    e.preventDefault();try{cv.setPointerCapture(e.pointerId);}catch(_){}
+    if(e.pointerType==='pen')st.penSeen=true;
+    if(e.pointerType==='touch'){
+      touches.set(e.pointerId,{x:e.clientX,y:e.clientY});
+      if(touches.size===2){cancelTouchStroke();const i=twoInfo(),r=pageEl.getBoundingClientRect();
+        g={d0:i.d,s0:Z.s,px:(i.mx-r.left-Z.tx)/Z.s,py:(i.my-r.top-Z.ty)/Z.s,lmy:i.my};return;}
+      if(touches.size>2||st.penSeen||cur)return; // ペンを使う人は手のひら・指では書かない（2本指はズーム）
+      startStroke(e);return;}
+    if(cur)return; // 書いている途中の別の入力は無視（手のひらなど）
+    startStroke(e);});
   cv.addEventListener('pointermove',e=>{
-    if(scrollY0!=null){window.scrollBy(0,scrollY0-e.clientY);scrollY0=e.clientY;return;}
-    if(!cur)return;e.preventDefault();
-    const evs=e.getCoalescedEvents?e.getCoalescedEvents():[e];
-    if(cur.eraser){evs.forEach(ev=>erase(pos(ev)));return;}
-    evs.forEach(ev=>cur.pts.push(pos(ev)));draw();});
-  const end=()=>{cur=null;scrollY0=null;};
+    if(touches.has(e.pointerId)){touches.set(e.pointerId,{x:e.clientX,y:e.clientY});
+      if(g&&touches.size>=2){e.preventDefault();const i=twoInfo(),r=pageEl.getBoundingClientRect();
+        Z.s=Math.min(5,Math.max(1,g.s0*i.d/g.d0));
+        if(Z.s<=1.02&&g.s0<=1.02){window.scrollBy(0,g.lmy-i.my);} // 等倍のときは2本指でスクロール
+        Z.tx=i.mx-r.left-g.px*Z.s;Z.ty=i.my-r.top-g.py*Z.s;g.lmy=i.my;applyZ();return;}}
+    if(!cur||e.pointerId!==curId)return;e.preventDefault();
+    const p=pos(e);
+    if(cur.eraser){erase(p);return;}
+    const l=cur.pts[cur.pts.length-1];
+    if(Math.hypot(p[0]-l[0],p[1]-l[1])>0.25)return; // 飛んだ点は捨てる
+    cur.pts.push(p);draw();});
+  const end=e=>{touches.delete(e.pointerId);if(touches.size<2)g=null;
+    if(e.pointerId===curId){cur=null;curId=null;}};
   cv.addEventListener('pointerup',end);cv.addEventListener('pointercancel',end);
 }
 
@@ -700,7 +733,7 @@ if(cfg.url&&cfg.anonKey){
     const chk=({data,error})=>{if(error)throw error;return data;};
     window.Cloud={ready:true,
       login:async(e,p)=>chk(await sb.auth.signInWithPassword({email:e,password:p})),
-      signup:async(e,p)=>{const d=chk(await sb.auth.signUp({email:e,password:p}));
+      signup:async(e,p)=>{const d=chk(await sb.auth.signUp({email:e,password:p,options:{emailRedirectTo:location.origin+location.pathname}}));
         if(!d.session)throw {code:'confirm',message:'確認メールを送りました。メール内のリンクを開いてからログインしてください。'};return d;},
       logout:async()=>chk(await sb.auth.signOut()),
       reset:async e=>chk(await sb.auth.resetPasswordForEmail(e,{redirectTo:location.origin+location.pathname})),
