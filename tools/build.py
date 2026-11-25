@@ -112,7 +112,7 @@ def main(src):
     chapters = {}
     for (ch, kind, _v), (pdf, ver, name) in sorted(docs.items(), key=lambda kv: (kv[0][0], kv[0][1] != "本冊", kv[0][2] != "iPad横")):
         print(f"第{ch}章 {kind} ({ver}) {pdf}")
-        C = chapters.setdefault(ch, dict(ch=ch, name=name, questions={}, summary=[], summaryP=[], hasBook=False, hasAns=False))
+        C = chapters.setdefault(ch, dict(ch=ch, name=name, questions={}, summary=[], summaryP=[], sections={}, hasBook=False, hasAns=False))
         pages = parse_bbox(pdf)
         pages_idx = {}
         d = f"img/ch{ch}"
@@ -120,11 +120,14 @@ def main(src):
             C["hasBook"] = True
             land = ver == "iPad横"
             sfx, pre = ("", "") if land else ("P", "p")
+            cur_sec = None
             for i, p in enumerate(pages):
                 qid = page_qid(p)
                 if qid and "割ライン" in p["text"]:
                     q = C["questions"].setdefault(qid, dict(id=qid))
                     txt = p["text"]
+                    if cur_sec and "sec" not in q:
+                        q["sec"] = cur_sec
                     q[pre + "q"] = f"{d}/{pre}q{qid.split('-')[1]}"
                     m2 = re.search(r"([①-⑨])\s*[〜～]\s*([①-⑨])\s*の\s*うち", txt.replace("\n", ""))
                     n = CIRC.index(m2.group(2)) + 1 if m2 else max([CIRC.index(c) + 1 for c in txt if c in CIRC] or [4])
@@ -151,6 +154,22 @@ def main(src):
                 else:
                     name_ = f"{pre}s{i+1:02d}"
                     C["summary" + sfx].append(f"{d}/{name_}")
+                    # 節の見出し（例: 1-1ケッペン気候区分…）
+                    head = "\n".join(p["text"].split("\n")[:4])
+                    sm = re.search(r"(?m)^(\d+-\d+)(?=\D)([^\n]*)", head)
+                    key = None
+                    if sm and sm.group(1).split("-")[0] == str(ch):
+                        cur_sec = key = sm.group(1)
+                        S = C["sections"].setdefault(key, dict(id=key, title="", sum=[], sumP=[]))
+                        t = re.sub(r"（つづ.*$", "", sm.group(2)).strip()
+                        if t and not S["title"]:
+                            S["title"] = t
+                        cm = re.search(r"過去問\s*(\d+)\s*問", p["text"])
+                        if cm and "count" not in S:
+                            S["count"] = int(cm.group(1))
+                        S["sum" + sfx].append(f"{d}/{name_}")
+                    else:
+                        C.setdefault("intro" + sfx, []).append(f"{d}/{name_}")
                     pages_idx[i] = name_
         else:
             C["hasAns"] = True
@@ -182,6 +201,9 @@ def main(src):
     for ch in sorted(chapters):
         C = chapters[ch]
         C["questions"] = [C["questions"][k] for k in sorted(C["questions"], key=lambda s: int(s.split("-")[1]))]
+        C["sections"] = [C["sections"][k] for k in sorted(C["sections"], key=lambda s: int(s.split("-")[1]))]
+        for S in C["sections"]:
+            S["qs"] = [q["id"] for q in C["questions"] if q.get("sec") == S["id"]]
         out.append(C)
         print(f"第{ch}章 {C['name']}: {len(C['questions'])}問, まとめ{len(C['summary'])}p, 本冊={C['hasBook']} 解答={C['hasAns']}")
     from concurrent.futures import ThreadPoolExecutor

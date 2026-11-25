@@ -192,7 +192,17 @@ dialog[open]::backdrop{animation:bdIn .25s ease}
 .score{display:inline-block;animation:popIn .5s var(--spring) both .1s}
 .spot{transition:background .2s,border-color .2s}
 @media (prefers-reduced-motion: reduce){*,*::before,*::after{animation:none!important;transition:none!important}.page img{opacity:1}}
-@media (max-width:600px){.inkbar{top:auto;bottom:calc(200px + env(safe-area-inset-bottom));transform:none;right:6px}.inkbar button{width:38px;height:38px}}
+.secblk{margin-bottom:14px}
+.sechead{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.sect{display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-size:16px}
+.sid{display:inline-block;background:var(--main);color:#fff;font-weight:800;border-radius:8px;padding:3px 9px;font-size:14px}
+:root[data-theme="dark"] .sid{color:#0f1719}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .sid{color:#0f1719}}
+.secact{display:flex;align-items:center;gap:8px}
+.sc{font-size:12.5px}
+.sech{display:flex;align-items:center;gap:10px;margin:6px 0 12px;font-size:19px}
+.secnav{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px}
+.inkbar{top:auto;bottom:calc(200px + env(safe-area-inset-bottom));transform:none;right:6px}.inkbar button{width:38px;height:38px}}
 /* 印刷 */
 .pp{background:#fff;margin:0 auto 14px;box-shadow:0 1px 4px rgba(0,0,0,.15);line-height:0}
 .pp img{width:100%;display:block}
@@ -342,32 +352,56 @@ function home(){
 }
 
 // ---- 章
-function chapter(c,tab){
+function qFilter(list){return list.filter(inTarget).filter(q=>ui.mode==='all'||(ui.mode==='todo'&&!res(q.id))||(ui.mode==='wrong'&&res(q.id)&&!res(q.id).r));}
+function secQs(c,S){return S.qs.map(id=>QMAP[id]).filter(Boolean);}
+function secSum(S){const p=isPort()&&S.sumP&&S.sumP.length;return {list:p?S.sumP:S.sum,port:!!p};}
+function qCard(q){const r=res(q.id),p=P[q.id];return `<a class="q L${q.line}" href="${qurl(q)}" data-qid="${q.id}"><b>${q.id}</b><span>${esc(q.title||'')}</span><em class="${p?'pk':r?(r.r?'ok':'ng'):''}">${p?CIRC[p-1]:r?(r.r?'○':'×'):''}</em></a>`;}
+function chapter(c,tab,secId){
   setHead(`第${c.ch}章 ${c.name}`,true);
+  const secs=c.sections||[];
   const tl=c.questions.filter(inTarget);
-  const filt=tl.filter(q=>ui.mode==='all'||(ui.mode==='todo'&&!res(q.id))||(ui.mode==='wrong'&&res(q.id)&&!res(q.id).r));
+  const filt=qFilter(c.questions);
   const s=stats(tl);
   let body='';
-  if(tab==='sum'){
-    const sm=sumPages(c);
-    body=sm.list.length?`<div class="sum ${sm.port?'port':''}">${sm.list.map(p=>`<div class="page"><img loading="lazy" src="${p}.webp" alt="まとめページ"></div>`).join('')}</div>`:'<div class="card empty">まとめページはありません</div>';
+  const tabs=`<div class="tabs"><a class="pill ${tab==='q'?'on':''}" href="#/ch/${c.ch}">節ごとの演習</a><a class="pill ${tab==='sum'?'on':''}" href="#/ch/${c.ch}/sum">まとめ</a>${(c.intro||[]).length?`<a class="pill ${tab==='toc'?'on':''}" href="#/ch/${c.ch}/toc">目次</a>`:''}${c.ansTable?`<a class="pill" href="${c.ansTable}.webp" target="_blank">正解一覧</a>`:''}<button class="pill" id="prt">🖨 印刷</button></div>`;
+  if(tab==='toc'){
+    const p=isPort()&&(c.introP||[]).length?c.introP:(c.intro||[]);
+    body=`<div class="sum ${p===c.introP?'port':''}">${p.map(x=>`<div class="page"><img src="${x}.webp" alt="目次"></div>`).join('')}</div>`;
+  }else if(tab==='sum'){
+    // 節ごとのまとめ（secIdがあればその節だけ）
+    const show=secId?secs.filter(S=>S.id===secId):secs;
+    const i=secs.findIndex(S=>S.id===secId);
+    body=(secId?`<div class="row" style="margin-bottom:10px"><a class="pill" href="#/ch/${c.ch}/sum">← 章のまとめ一覧</a></div>`:
+      `<div class="secnav">${secs.map(S=>`<a class="pill" href="#/ch/${c.ch}/sum/${S.id}">${S.id} ${esc(S.title)}</a>`).join('')}</div>`)+
+      show.map(S=>{const sm=secSum(S),qs=qFilter(secQs(c,S));return `<section class="secblk" id="s${S.id}"><h3 class="sech"><span class="sid">${S.id}</span>${esc(S.title)}</h3>
+        <div class="sum ${sm.port?'port':''}">${sm.list.map(p=>`<div class="page"><img loading="lazy" src="${p}.webp" alt="${S.id} まとめ"></div>`).join('')}</div>
+        <div class="row" style="justify-content:center;margin:4px 0 22px"><button class="btn" data-solve="${S.id}" ${qs.length?'':'disabled'}>▶ この節の演習を解く（${qs.length}問）</button></div></section>`}).join('')+
+      (secId?`<div class="nav" style="margin:0 0 20px">${i>0?`<a class="btn sec" href="#/ch/${c.ch}/sum/${secs[i-1].id}">‹ ${secs[i-1].id}</a>`:'<span></span>'}${i<secs.length-1?`<a class="btn sec" href="#/ch/${c.ch}/sum/${secs[i+1].id}">${secs[i+1].id} ›</a>`:'<span></span>'}</div>`:'');
   }else{
-    body=`<div class="card" style="margin-bottom:12px;padding:12px">
+    body=`<div class="card" style="margin-bottom:14px;padding:12px">
       <div class="seg" id="tg">${TG.map(([t,l])=>`<button class="T${t} ${ui.target==t?'on':''}" data-t="${t}">${l}${t?'目標':''}<small>${c.questions.filter(q=>!t||(q.line||9)<=t).length}問</small></button>`).join('')}</div>
       <div class="row" style="margin-top:10px">${[['all','すべて'],['todo','未回答'],['wrong','間違い']].map(([m,t])=>`<button class="pill ${ui.mode==m?'on':''}" data-mode="${m}">${t}</button>`).join('')}
       <span class="muted" style="font-size:13px;margin-left:6px">○ ${s.ok}／× ${s.ng}／${s.total}問</span></div>
-      <div class="row" style="margin-top:10px"><button class="btn" id="start" ${filt.length?'':'disabled'}>この${filt.length}問を順に解く</button><button class="btn sec" id="shuf" ${filt.length?'':'disabled'}>シャッフル</button>
+      <div class="row" style="margin-top:10px"><button class="btn" id="start" ${filt.length?'':'disabled'}>章の${filt.length}問を順に解く</button><button class="btn sec" id="shuf" ${filt.length?'':'disabled'}>シャッフル</button>
       <button class="pill" id="reset" style="margin-left:auto;font-size:12px">この章の記録を消す</button></div></div>
-    <div class="qgrid">${filt.map(q=>{const r=res(q.id),p=P[q.id];return `<a class="q L${q.line}" href="${qurl(q)}"><b>${q.id}</b><span>${esc(q.title||'')}</span><em class="${p?'pk':r?(r.r?'ok':'ng'):''}">${p?CIRC[p-1]:r?(r.r?'○':'×'):''}</em></a>`}).join('')||'<div class="card empty">該当する問題はありません</div>'}</div>`;
+    ${secs.map(S=>{const all=secQs(c,S).filter(inTarget),qs=qFilter(secQs(c,S)),ss=stats(all);
+      return `<section class="secblk card"><div class="sechead">
+        <div class="sect"><span class="sid">${S.id}</span><b>${esc(S.title)}</b>${S.count?`<span class="muted sc">過去問${S.count}問</span>`:''}</div>
+        <div class="secact"><span class="muted sc">${ss.ok+ss.ng}/${ss.total}</span><a class="pill" href="#/ch/${c.ch}/sum/${S.id}">📖 まとめ</a><button class="btn" data-solve="${S.id}" ${qs.length?'':'disabled'}>▶ 解く（${qs.length}）</button></div></div>
+        <div style="margin:8px 0 10px">${bar(ss,6)}</div>
+        <div class="qgrid">${qs.map(qCard).join('')||'<div class="muted" style="font-size:13px;padding:6px 2px">該当する問題はありません</div>'}</div></section>`}).join('')}`;
   }
-  $app.innerHTML=`<div class="tabs"><a class="pill ${tab!=='sum'?'on':''}" href="#/ch/${c.ch}">演習</a><a class="pill ${tab==='sum'?'on':''}" href="#/ch/${c.ch}/sum">まとめ（${c.summary.length}p）</a>${c.ansTable?`<a class="pill" href="${c.ansTable}.webp" target="_blank">正解一覧</a>`:''}<button class="pill" id="prt">🖨 印刷</button></div>${body}`;
-  const tg=document.getElementById('tg');if(tg)bindTarget(tg,()=>chapter(c,tab));
+  $app.innerHTML=tabs+body;
+  const tg=document.getElementById('tg');if(tg)bindTarget(tg,()=>chapter(c,tab,secId));
   document.getElementById('prt').onclick=()=>openPrint(c);
-  $app.querySelectorAll('[data-mode]').forEach(b=>b.onclick=()=>{ui.mode=b.dataset.mode;save();chapter(c,tab)});
+  $app.querySelectorAll('[data-mode]').forEach(b=>b.onclick=()=>{ui.mode=b.dataset.mode;save();chapter(c,tab,secId)});
+  $app.querySelectorAll('[data-solve]').forEach(b=>b.onclick=()=>{const S=secs.find(x=>x.id===b.dataset.solve);startQueue(qFilter(secQs(c,S)));});
+  // 節の中の問題を開いたら、その節の問題だけを順に進む
+  $app.querySelectorAll('.secblk [data-qid]').forEach(a=>a.addEventListener('click',()=>{const blk=a.closest('.secblk');queue=[...blk.querySelectorAll('[data-qid]')].map(x=>x.dataset.qid);}));
   const st=document.getElementById('start'),sh=document.getElementById('shuf'),rs=document.getElementById('reset');
   if(st)st.onclick=()=>startQueue(filt);
   if(sh)sh.onclick=()=>startQueue(filt.slice().sort(()=>Math.random()-.5));
-  if(rs)rs.onclick=()=>{if(confirm(`第${c.ch}章の解答記録を消しますか？`)){c.questions.forEach(q=>{delete S[q.id];delete P[q.id]});save();chapter(c,tab);}};
+  if(rs)rs.onclick=()=>{if(confirm(`第${c.ch}章の解答記録を消しますか？`)){c.questions.forEach(q=>{delete S[q.id];delete P[q.id]});save();chapter(c,tab,secId);}};
 }
 
 // ---- 問題
@@ -716,7 +750,7 @@ function routeInner(){
   if(h[0]==='ch'){const c=BOOK.find(x=>x.ch==h[1]);if(!c)return home();
     if(h[2]==='q')return question(c,h[3]);
     queue=null;window.scrollTo(0,0);
-    return chapter(c,h[2]==='sum'?'sum':'q');}
+    return chapter(c,h[2]==='sum'?'sum':h[2]==='toc'?'toc':'q',h[2]==='sum'?h[3]:undefined);}
   queue=null;home();window.scrollTo(0,0);
 }
 addEventListener('hashchange',()=>route(true));route(true);
