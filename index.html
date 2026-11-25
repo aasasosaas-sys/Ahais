@@ -12,32 +12,38 @@
 <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
 <link rel="icon" href="icons/favicon-32.png" sizes="32x32" type="image/png">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@400;500;700;900&display=swap" rel="stylesheet">
 <title>地理 合格ライン問題集</title>
 <style>
 :root{
-  --bg:#f3f6f7; --card:#fff; --ink:#1d2b30; --sub:#5d6f75; --line:#dbe3e6;
+  --bg:#eef3f4; --card:#fff; --ink:#16262b; --sub:#5d6f75; --line:#e1e8ea;
   --main:#0f5f6e; --main2:#e3f0f2; --pick:#1f6fb5; --pickbg:#e6f0fa;
   --ok:#2e9e4f; --ng:#d23c3c; --okbg:#e7f6ec; --ngbg:#fde9e9; --hdr:#0f5f6e;
   --l6:#1f6fb5; --l7:#2e9e4f; --l8:#7b4fb5; --l9:#c8302f;
+  --glow:rgba(26,138,156,.14); --shadow:0 1px 2px rgba(10,40,48,.05),0 8px 24px rgba(10,40,48,.06); --r:18px;
 }
 @media (prefers-color-scheme: dark){
   :root:not([data-theme="light"]){ --bg:#0f1719; --card:#182326; --ink:#e4ecee; --sub:#9db0b5; --line:#2a3a3e;
-    --main:#4fb3c4; --main2:#1c3236; --pickbg:#16283a; --okbg:#173023; --ngbg:#3a1c1c; --hdr:#123d45; }
+    --main:#4fb3c4; --main2:#1c3236; --pickbg:#16283a; --okbg:#173023; --ngbg:#3a1c1c; --hdr:#123d45; --glow:rgba(79,179,196,.10); --shadow:0 1px 2px rgba(0,0,0,.3),0 8px 24px rgba(0,0,0,.25); }
 }
 :root[data-theme="dark"]{ --bg:#0f1719; --card:#182326; --ink:#e4ecee; --sub:#9db0b5; --line:#2a3a3e;
-  --main:#4fb3c4; --main2:#1c3236; --pickbg:#16283a; --okbg:#173023; --ngbg:#3a1c1c; --hdr:#123d45; }
+  --main:#4fb3c4; --main2:#1c3236; --pickbg:#16283a; --okbg:#173023; --ngbg:#3a1c1c; --hdr:#123d45; --glow:rgba(79,179,196,.10); --shadow:0 1px 2px rgba(0,0,0,.3),0 8px 24px rgba(0,0,0,.25); }
 *{box-sizing:border-box}
-html,body{margin:0;background:var(--bg);color:var(--ink);font-family:"Hiragino Sans","Noto Sans JP","Yu Gothic",system-ui,sans-serif;-webkit-text-size-adjust:100%}
+html,body{margin:0;background:var(--bg);color:var(--ink);font-family:"Zen Kaku Gothic New","Hiragino Sans","Noto Sans JP","Yu Gothic",system-ui,sans-serif;-webkit-text-size-adjust:100%;font-feature-settings:"palt";letter-spacing:.01em}
+body{background:radial-gradient(1200px 500px at 85% -10%,var(--glow),transparent 70%),var(--bg);background-attachment:fixed;min-height:100vh}
+.num{font-variant-numeric:tabular-nums}
 button{font:inherit;color:inherit;cursor:pointer}
 button:disabled{opacity:.4;cursor:default}
 a{color:inherit}
-header{position:sticky;top:0;z-index:30;background:var(--hdr);color:#fff;display:flex;align-items:center;gap:8px;padding:10px 16px;padding-top:calc(10px + env(safe-area-inset-top))}
+header{position:sticky;top:0;z-index:30;background:linear-gradient(120deg,#13798b,var(--hdr) 55%,#0a4350);box-shadow:0 2px 12px rgba(6,40,48,.18);color:#fff;display:flex;align-items:center;gap:8px;padding:10px 16px;padding-top:calc(10px + env(safe-area-inset-top))}
 header .t{font-weight:800;font-size:17px;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-header button{background:rgba(255,255,255,.16);border:0;border-radius:8px;padding:6px 11px;color:#fff;font-size:14px;white-space:nowrap}
+header button{background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.12);border-radius:10px;padding:6px 11px;color:#fff;font-size:14px;white-space:nowrap}
 header #send{background:#f0a531;color:#1d2b30;font-weight:800}
 main{max-width:1180px;margin:0 auto;padding:16px}
 .muted{color:var(--sub)}
-.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:18px;box-shadow:var(--shadow)}
 h3.sec{margin:18px 0 8px;font-size:15px;color:var(--sub)}
 .seg{display:flex;flex-wrap:wrap;gap:6px}
 .seg button{border:2px solid var(--line);background:var(--card);border-radius:12px;padding:8px 14px;font-weight:700;font-size:15px;display:flex;flex-direction:column;align-items:center;min-width:76px}
@@ -64,10 +70,11 @@ h3.sec{margin:18px 0 8px;font-size:15px;color:var(--sub)}
 .lbadge{display:inline-block;color:#fff;border-radius:999px;padding:2px 10px;font-size:12px;font-weight:700;white-space:nowrap}
 .B6{background:var(--l6)}.B7{background:var(--l7)}.B8{background:var(--l8)}.B9{background:var(--l9)}
 .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
-.btn{border:0;border-radius:10px;padding:10px 16px;background:var(--main);color:#fff;font-weight:700;font-size:15px;text-decoration:none;display:inline-block}
+.btn{border:0;border-radius:12px;padding:11px 18px;background:linear-gradient(180deg,color-mix(in srgb,var(--main) 88%,#fff),var(--main));box-shadow:0 2px 8px color-mix(in srgb,var(--main) 30%,transparent);color:#fff;font-weight:700;font-size:15px;text-decoration:none;display:inline-block}
 :root[data-theme="dark"] .btn{color:#0f1719}
-@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .btn{color:#0f1719}}
-.btn.sec{background:var(--card);color:var(--ink);border:1px solid var(--line)}
+:root[data-theme="dark"] .btn.sec{color:var(--ink);background:var(--card);box-shadow:none}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .btn{color:#0f1719}:root:not([data-theme="light"]) .btn.sec{color:var(--ink);background:var(--card);box-shadow:none}}
+.btn.sec{background:var(--card);color:var(--ink);border:1px solid var(--line);box-shadow:0 1px 2px rgba(10,40,48,.05)}
 .btn.send{background:#f0a531;color:#1d2b30}
 .page{position:relative;background:#fff;border-radius:10px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.12);line-height:0}
 .page img{width:100%;height:auto;display:block}
@@ -217,6 +224,44 @@ dialog[open]::backdrop{animation:bdIn .25s ease}
   .pp.P{width:210mm;height:297mm}.pp.P img{width:210mm;height:297mm;object-fit:contain}
   .pp.L{page:land;width:297mm;height:210mm}.pp.L img{width:297mm;height:210mm;object-fit:contain}
 }
+/* ===== ホーム ===== */
+.hero{display:grid;grid-template-columns:1fr auto;gap:18px;align-items:center;margin-bottom:14px;position:relative;overflow:hidden}
+.hero::after{content:"";position:absolute;right:-60px;top:-60px;width:260px;height:260px;border-radius:50%;background:radial-gradient(circle,var(--glow),transparent 70%);pointer-events:none}
+.hello{font-size:13px;color:var(--sub);font-weight:700;letter-spacing:.08em}
+.hero h2{margin:4px 0 10px;font-size:26px;font-weight:900;line-height:1.25}
+.chips{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+.chip{display:inline-flex;align-items:center;gap:6px;background:var(--main2);border-radius:999px;padding:6px 12px;font-size:13px;font-weight:700}
+.chip b{font-size:16px}
+.ringbox{position:relative;width:150px;height:150px;flex:none}
+.ringbox svg{transform:rotate(-90deg);display:block}
+.ringbox .rc{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center}
+.ringbox .rc b{font-size:34px;font-weight:900;line-height:1}
+.ringbox .rc span{font-size:11.5px;color:var(--sub);margin-top:4px}
+.ring-arc{transition:stroke-dashoffset 1s var(--ease)}
+.resume{display:flex;align-items:center;gap:12px;text-decoration:none;background:linear-gradient(120deg,#13798b,#0f5f6e);color:#fff;border-radius:14px;padding:12px 16px;box-shadow:0 6px 18px rgba(15,95,110,.28)}
+.resume .rl{font-size:12px;opacity:.85}.resume .rt{font-weight:800}
+.resume .ar{margin-left:auto;font-size:22px}
+.tgwrap{margin-bottom:14px}
+.tgwrap .seg button{position:relative;padding-top:12px}
+.tgwrap .seg button::before{content:"";position:absolute;top:6px;left:50%;width:18px;height:4px;margin-left:-9px;border-radius:2px;background:var(--line)}
+.T6::before{background:var(--l6)!important}.T7::before{background:linear-gradient(90deg,var(--l6) 50%,var(--l7) 50%)!important}.T8::before{background:linear-gradient(90deg,var(--l6) 33%,var(--l7) 33% 66%,var(--l8) 66%)!important}.T9::before,.T0::before{background:linear-gradient(90deg,var(--l6) 25%,var(--l7) 25% 50%,var(--l8) 50% 75%,var(--l9) 75%)!important}
+.ch{position:relative;overflow:hidden;display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center;min-height:118px}
+.ch .wm{position:absolute;right:-6px;bottom:-26px;font-size:96px;font-weight:900;color:var(--main);opacity:.06;line-height:1;pointer-events:none}
+.ch .meta{font-size:12.5px;color:var(--sub);margin-top:2px}
+.ch .mini{width:58px;height:58px;position:relative}
+.ch .mini svg{transform:rotate(-90deg);display:block}
+.ch .mini b{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:900}
+.ch .stats{grid-column:1/-1;margin-top:2px}
+.sectitle{display:flex;align-items:baseline;gap:10px;margin:22px 4px 10px}
+.sectitle h3{margin:0;font-size:17px;font-weight:900}
+.tabs{background:var(--card);border:1px solid var(--line);border-radius:999px;padding:4px;display:inline-flex;box-shadow:var(--shadow)}
+.tabs .pill{border:0;background:transparent}
+.tabs .pill.on{background:var(--main);color:#fff}
+.secblk.card{border-left:5px solid var(--main)}
+.q{box-shadow:0 1px 2px rgba(10,40,48,.04)}
+.q em.ok,.q em.ng,.q em.pk{width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;color:#fff}
+.q em.ok{background:var(--ok)}.q em.ng{background:var(--ng)}.q em.pk{background:var(--pick)}
+@media (max-width:600px){.tgw{display:none}.hero{grid-template-columns:1fr}.ringbox{margin:0 auto;order:-1}.hero h2{font-size:22px}.tabs{display:flex;overflow-x:auto;border-radius:14px}}
 @media (max-width:600px){ header #acct{max-width:92px;overflow:hidden;text-overflow:ellipsis} header #gear{font-size:0;padding:6px 9px} header #gear::before{content:'⚙';font-size:15px}
  main{padding:12px} .ansbar{margin:12px -12px 0} .qhead h2{font-size:19px} .choices button{min-width:44px;height:46px;font-size:20px} header .t{font-size:15px} .seg button{min-width:0;flex:1;padding:8px 6px} }
 </style>
@@ -312,7 +357,7 @@ dlg.querySelectorAll('[data-grade]').forEach(l=>l.onclick=e=>{e.preventDefault()
   ui.grade=l.dataset.grade;save();paintDlg();});
 dlg.querySelectorAll('[data-view]').forEach(b=>b.onclick=()=>{ui.view=b.dataset.view;save();paintDlg();});
 dlg.querySelectorAll('[data-th]').forEach(b=>b.onclick=()=>{ui.theme=b.dataset.th;save();applyTheme();paintDlg();});
-function targetSeg(){return TG.map(([t,l])=>`<button class="T${t} ${ui.target==t?'on':''}" data-t="${t}">${l}${t?'目標':''}<small>${ALLQ.filter(q=>!t||(q.line||9)<=t).length}問</small></button>`).join('');}
+function targetSeg(){return TG.map(([t,l])=>`<button class="T${t} ${ui.target==t?'on':''}" data-t="${t}">${l}${t?'<span class="tgw">目標</span>':''}<small>${ALLQ.filter(q=>!t||(q.line||9)<=t).length}問</small></button>`).join('');}
 function bindTarget(el,after){el.querySelectorAll('[data-t]').forEach(b=>b.onclick=()=>{ui.target=+b.dataset.t;save();after();});}
 
 function stats(list){let ok=0,ng=0;list.forEach(q=>{const r=res(q.id);if(r)r.r?ok++:ng++;});return{ok,ng,total:list.length};}
@@ -320,33 +365,45 @@ function bar(s,h){const t=s.total||1;return `<div class="bar" style="${h?'height
 function startQueue(list){if(!list.length)return;queue=list.map(q=>q.id);location.hash=qurl(list[0]);}
 
 // ---- ホーム
+function ring(ok,ng,total,size,sw){const r=(size-sw)/2,C=2*Math.PI*r,t=total||1,a=C*ok/t,b=C*ng/t;
+  return `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}"><circle cx="${size/2}" cy="${size/2}" r="${r}" fill="none" stroke="var(--main2)" stroke-width="${sw}"/>
+  <circle class="ring-arc" cx="${size/2}" cy="${size/2}" r="${r}" fill="none" stroke="var(--ng)" stroke-width="${sw}" stroke-linecap="round" stroke-dasharray="${b} ${C}" stroke-dashoffset="${-a}"/>
+  <circle class="ring-arc" cx="${size/2}" cy="${size/2}" r="${r}" fill="none" stroke="var(--ok)" stroke-width="${sw}" stroke-linecap="round" stroke-dasharray="${a} ${C}"/></svg>`;}
+const dayKey=t=>{const d=new Date(t);return d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate();};
+function streak(){const days=new Set(Object.values(S).map(r=>r.at&&dayKey(r.at)).filter(Boolean).concat(ui.days||[]));let n=0;const d=new Date();
+  if(!days.has(dayKey(d)))d.setDate(d.getDate()-1);while(days.has(dayKey(d))){n++;d.setDate(d.getDate()-1);}return n;}
 function home(){
-  setHead('地理 合格ライン問題集 知識編',false);
+  setHead('地理 合格ライン問題集',false);
   const tq=ALLQ.filter(inTarget),all=stats(tq);
-  const wrong=tq.filter(q=>res(q.id)&&!res(q.id).r);
-  const cards=BOOK.map(c=>{const l=c.questions.filter(inTarget),s=stats(l);
-    return `<a class="card ch" href="#/ch/${c.ch}"><div class="no">第${c.ch}章</div><h3>${esc(c.name)}</h3>${bar(s)}
-    <div class="stats"><span>${s.total}問${ui.target?`<span class="muted">／全${c.questions.length}</span>`:''}</span><span class="ok">○ ${s.ok}</span><span class="ng">× ${s.ng}</span></div></a>`}).join('');
-  $app.innerHTML=`<div class="card" style="margin-bottom:14px">
-    <b style="font-size:17px">何割目標？</b> <span class="muted" style="font-size:13px">目標に必要な問題だけを出題します</span>
-    <div class="seg" id="tg" style="margin-top:10px">${targetSeg()}</div>
-    <div class="row" style="margin-top:8px;font-size:12px"><span class="lbadge B6">6割ライン</span><span class="lbadge B7">7割ライン</span><span class="lbadge B8">8割ライン</span><span class="lbadge B9">9割ライン</span><span class="muted">問題の左端の色＝ライン</span></div>
-  </div>
-  <div class="card" style="margin-bottom:14px">
-    <div class="row" style="justify-content:space-between"><div><b style="font-size:17px">${ui.target?ui.target+'割目標':'全問'}の進み具合</b><div class="muted" style="font-size:13px">${all.total}問中 ${all.ok+all.ng}問解いた／正解 ${all.ok}問</div></div>
-    <div class="muted" style="font-size:13px">採点：<b>${ui.grade==='batch'?'まとめて採点（送信ボタン）':'その場で採点'}</b> <button class="pill" id="chg" style="padding:4px 10px;font-size:12px">変更</button></div></div>
-    <div style="margin-top:10px">${bar(all,10)}</div>
-    <div class="row" style="margin-top:12px">
-      <button class="btn" id="todo">未回答を順に解く（${tq.filter(q=>!res(q.id)).length}）</button>
-      <button class="btn sec" id="wrongAll" ${wrong.length?'':'disabled'}>間違えた問題（${wrong.length}）</button>
-      <button class="btn sec" id="randAll">ランダム20問</button>
-      ${LAST.length?'<a class="btn sec" href="#/result">前回の採点結果</a>':''}
-    </div>
-  </div>
+  const wrong=tq.filter(q=>res(q.id)&&!res(q.id).r),todo=tq.filter(q=>!res(q.id));
+  const today=dayKey(Date.now()),todayN=Object.values(S).filter(r=>r.at&&dayKey(r.at)===today).length;
+  const solved=all.ok+all.ng,acc=solved?Math.round(all.ok/solved*100):0;
+  const lastQ=ui.lastQ&&QMAP[ui.lastQ];
+  const h=new Date().getHours(),hello=h<5?'夜おそくまで おつかれさま':h<11?'おはよう':h<18?'こんにちは':'こんばんは';
+  const cards=BOOK.map(c=>{const l=c.questions.filter(inTarget),s=stats(l),pct=s.total?Math.round(s.ok/s.total*100):0;
+    return `<a class="card ch" href="#/ch/${c.ch}"><span class="wm">${c.ch}</span><div><div class="no">第${c.ch}章</div><h3>${esc(c.name)}</h3><div class="meta">${(c.sections||[]).length}節・${s.total}問${ui.target?`（全${c.questions.length}）`:''}</div></div>
+    <div class="mini">${ring(s.ok,s.ng,s.total,58,7)}<b class="num">${pct}%</b></div>
+    <div class="stats"><span class="ok">○ ${s.ok}</span><span class="ng">× ${s.ng}</span><span class="muted">残り ${s.total-s.ok-s.ng}</span></div></a>`}).join('');
+  $app.innerHTML=`<section class="card hero">
+    <div><div class="hello">${hello}</div><h2>${ui.target?`<span style="color:var(--l${ui.target})">${ui.target}割</span>を目指して`:'全問制覇を目指して'}</h2>
+      <div class="chips"><span class="chip">今日 <b class="num">${todayN}</b>問</span><span class="chip">🔥 連続 <b class="num">${streak()}</b>日</span><span class="chip">正答率 <b class="num">${acc}</b>%</span></div>
+      ${lastQ?`<a class="resume" href="${qurl(lastQ)}"><div><div class="rl">続きから</div><div class="rt">${lastQ.id} ${esc(lastQ.title||'')}</div></div><span class="ar">›</span></a>`:''}
+      <div class="row" style="margin-top:12px">
+        <button class="btn" id="todo" ${todo.length?'':'disabled'}>未回答を解く（${todo.length}）</button>
+        <button class="btn sec" id="wrongAll" ${wrong.length?'':'disabled'}>間違い直し（${wrong.length}）</button>
+        <button class="btn sec" id="randAll">ランダム20問</button>
+        ${LAST.length?'<a class="btn sec" href="#/result">前回の採点</a>':''}
+      </div></div>
+    <div class="ringbox">${ring(all.ok,all.ng,all.total,150,14)}<div class="rc"><b class="num">${all.total?Math.round(all.ok/all.total*100):0}<small style="font-size:16px">%</small></b><span>正解 ${all.ok}／${all.total}問</span></div></div>
+  </section>
+  <section class="card tgwrap"><div class="row" style="justify-content:space-between;margin-bottom:10px"><b style="font-size:16px">何割目標？</b>
+    <span class="muted" style="font-size:12.5px">採点：${ui.grade==='batch'?'まとめて送信':'その場で'} <button class="pill" id="chg" style="padding:3px 10px;font-size:12px">変更</button></span></div>
+    <div class="seg" id="tg">${targetSeg()}</div></section>
+  <div class="sectitle"><h3>章から選ぶ</h3><span class="muted" style="font-size:12.5px">左の色＝ライン（<span style="color:var(--l6)">6割</span>・<span style="color:var(--l7)">7割</span>・<span style="color:var(--l8)">8割</span>・<span style="color:var(--l9)">9割</span>）</span></div>
   <div class="chgrid">${cards||'<div class="card empty">データがありません</div>'}</div>`;
   bindTarget(document.getElementById('tg'),home);
   document.getElementById('chg').onclick=()=>{paintDlg();dlg.showModal();};
-  document.getElementById('todo').onclick=()=>startQueue(tq.filter(q=>!res(q.id)));
+  document.getElementById('todo').onclick=()=>startQueue(todo);
   document.getElementById('wrongAll').onclick=()=>startQueue(wrong);
   document.getElementById('randAll').onclick=()=>startQueue(tq.slice().sort(()=>Math.random()-.5).slice(0,20));
 }
@@ -355,7 +412,7 @@ function home(){
 function qFilter(list){return list.filter(inTarget).filter(q=>ui.mode==='all'||(ui.mode==='todo'&&!res(q.id))||(ui.mode==='wrong'&&res(q.id)&&!res(q.id).r));}
 function secQs(c,S){return S.qs.map(id=>QMAP[id]).filter(Boolean);}
 function secSum(S){const p=isPort()&&S.sumP&&S.sumP.length;return {list:p?S.sumP:S.sum,port:!!p};}
-function qCard(q){const r=res(q.id),p=P[q.id];return `<a class="q L${q.line}" href="${qurl(q)}" data-qid="${q.id}"><b>${q.id}</b><span>${esc(q.title||'')}</span><em class="${p?'pk':r?(r.r?'ok':'ng'):''}">${p?CIRC[p-1]:r?(r.r?'○':'×'):''}</em></a>`;}
+function qCard(q){const r=res(q.id),p=P[q.id];return `<a class="q L${q.line}" href="${qurl(q)}" data-qid="${q.id}"><b>${q.id}</b><span>${esc(q.title||'')}</span><em class="${p?'pk':r?(r.r?'ok':'ng'):''}">${p?CIRC[p-1]:r?(r.r?'✓':'✕'):''}</em></a>`;}
 function chapter(c,tab,secId){
   setHead(`第${c.ch}章 ${c.name}`,true);
   const secs=c.sections||[];
@@ -379,7 +436,7 @@ function chapter(c,tab,secId){
       (secId?`<div class="nav" style="margin:0 0 20px">${i>0?`<a class="btn sec" href="#/ch/${c.ch}/sum/${secs[i-1].id}">‹ ${secs[i-1].id}</a>`:'<span></span>'}${i<secs.length-1?`<a class="btn sec" href="#/ch/${c.ch}/sum/${secs[i+1].id}">${secs[i+1].id} ›</a>`:'<span></span>'}</div>`:'');
   }else{
     body=`<div class="card" style="margin-bottom:14px;padding:12px">
-      <div class="seg" id="tg">${TG.map(([t,l])=>`<button class="T${t} ${ui.target==t?'on':''}" data-t="${t}">${l}${t?'目標':''}<small>${c.questions.filter(q=>!t||(q.line||9)<=t).length}問</small></button>`).join('')}</div>
+      <div class="seg" id="tg">${TG.map(([t,l])=>`<button class="T${t} ${ui.target==t?'on':''}" data-t="${t}">${l}${t?'<span class="tgw">目標</span>':''}<small>${c.questions.filter(q=>!t||(q.line||9)<=t).length}問</small></button>`).join('')}</div>
       <div class="row" style="margin-top:10px">${[['all','すべて'],['todo','未回答'],['wrong','間違い']].map(([m,t])=>`<button class="pill ${ui.mode==m?'on':''}" data-mode="${m}">${t}</button>`).join('')}
       <span class="muted" style="font-size:13px;margin-left:6px">○ ${s.ok}／× ${s.ng}／${s.total}問</span></div>
       <div class="row" style="margin-top:10px"><button class="btn" id="start" ${filt.length?'':'disabled'}>章の${filt.length}問を順に解く</button><button class="btn sec" id="shuf" ${filt.length?'':'disabled'}>シャッフル</button>
@@ -409,6 +466,7 @@ function question(c,n){
   const q=c.questions.find(x=>num(x)===n);
   if(!q){location.hash=`#/ch/${c.ch}`;return;}
   setHead(`${q.id} ${q.title||''}`,true);
+  if(ui.lastQ!==q.id){ui.lastQ=q.id;store(KEY+'-ui',ui);}
   const list=queue&&queue.includes(q.id)?queue:c.questions.filter(inTarget).map(x=>x.id).concat(inTarget(q)?[]:[q.id]);
   const pos=list.indexOf(q.id),prev=QMAP[list[pos-1]],next=QMAP[list[pos+1]];
   const N=q.n||4, batch=ui.grade==='batch', r=res(q.id);
@@ -467,7 +525,7 @@ function question(c,n){
   document.onkeydown=e=>{if(dlg.open)return;const d=parseInt(e.key);if(d>=1&&d<=N)pickK(d);else if(e.key==='ArrowRight')go(next);else if(e.key==='ArrowLeft')go(prev);else if(e.key==='Enter'&&batch&&Object.keys(P).length)submitAll();};
   window.scrollTo(0,0);
 }
-function record(q,k){const r=S[q.id]||{n:0};r.n++;r.r=k==q.ans;r.k=k;r.at=Date.now();S[q.id]=r;}
+function record(q,k){ui.lastQ=q.id;const r=S[q.id]||{n:0};r.n++;r.r=k==q.ans;r.k=k;r.at=Date.now();S[q.id]=r;}
 
 // ---- 送信・採点
 function submitAll(){
@@ -483,7 +541,7 @@ function result(){
   if(!LAST.length){$app.innerHTML='<div class="card empty">まだ送信した解答はありません</div>';return;}
   const ok=LAST.filter(x=>x.ok).length,wrong=LAST.filter(x=>!x.ok).map(x=>QMAP[x.id]).filter(Boolean);
   $app.innerHTML=`<div class="card" style="margin-bottom:12px"><div class="row" style="justify-content:space-between">
-    <div><div class="muted" style="font-size:13px">採点結果</div><div class="score"><span id="scoreN">0</span><span style="font-size:22px"> / ${LAST.length}問</span></div><div class="muted">正答率 ${Math.round(ok/LAST.length*100)}%</div></div>
+    <div><div class="muted" style="font-size:13px">採点結果</div><div class="score"><span id="scoreN" class="num">0</span><span style="font-size:22px"> / ${LAST.length}問</span></div><div class="muted">正答率 ${Math.round(ok/LAST.length*100)}%</div></div>
     <div class="row"><button class="btn" id="redo" ${wrong.length?'':'disabled'}>間違えた${wrong.length}問を解き直す</button><button class="btn sec" id="openAll">解説をすべて開く</button><a class="btn sec" href="#/">ホームへ</a></div></div>
     <div style="margin-top:10px">${bar({ok,ng:LAST.length-ok,total:LAST.length},10)}</div></div>
     <div class="res">${LAST.map(x=>{const q=QMAP[x.id];if(!q)return'';return `<details class="L${q.line}" ${x.ok?'':'open'}><summary><span class="mk ${x.ok?'ok':'ng'}">${x.ok?'○':'×'}</span><b>${q.id}</b><span class="tt">${esc(q.title||'')}</span>
