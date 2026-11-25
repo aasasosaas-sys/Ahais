@@ -494,7 +494,7 @@ window.onCloudUser=u=>{USER=u?{uid:u.uid,label:u.label}:null;paintAcct();if(USER
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')pullAndMerge();});
 let lastId='';
 const toEmail=id=>{lastId=id;return id.includes('@')?id.trim():id.trim().toLowerCase()+'@users.geo-gokaku.app';};
-const errJa=e=>{const c=(e&&e.code)||'';if((c==='over_email_send_rate_limit'||c==='email_address_invalid')&&lastId&&!lastId.includes('@'))return 'ユーザー名での登録は、いま準備中です（管理者の設定待ち）。メールアドレスで作るか、少し待ってから試してください';return ({'auth/invalid-credential':'ユーザー名かパスワードが違います','auth/wrong-password':'パスワードが違います','auth/user-not-found':'そのアカウントはありません','auth/email-already-in-use':'そのユーザー名（メール）はもう使われています','auth/weak-password':'パスワードは6文字以上にしてください','auth/invalid-email':'ユーザー名に使えない文字があります（英数字・-・_ がおすすめ）','auth/too-many-requests':'試行回数が多すぎます。少し待ってください','auth/network-request-failed':'ネットにつながっていません','invalid_credentials':'ユーザー名かパスワードが違います','user_already_exists':'そのユーザー名（メール）はもう使われています','weak_password':'パスワードは6文字以上にしてください','email_address_invalid':'ユーザー名に使えない文字があります（英数字・-・_ がおすすめ）','over_request_rate_limit':'試行回数が多すぎます。少し待ってください','over_email_send_rate_limit':'メール送信の回数制限です。少し待ってください','email_not_confirmed':'メールの確認がまだです。確認メールのリンクを開いてください','confirm':(e&&e.message)})[c]||(c==='confirm'?e.message:'エラー：'+(e&&e.message||e));};
+const errJa=e=>{const c=(e&&e.code)||'';if((c==='over_email_send_rate_limit'||c==='email_address_invalid')&&lastId&&!lastId.includes('@'))return 'ユーザー名での登録は、いま準備中です（管理者の設定待ち）。メールアドレスで作るか、少し待ってから試してください';return ({'auth/invalid-credential':'ユーザー名かパスワードが違います','auth/wrong-password':'パスワードが違います','auth/user-not-found':'そのアカウントはありません','auth/email-already-in-use':'そのユーザー名（メール）はもう使われています','auth/weak-password':'パスワードは6文字以上にしてください','auth/invalid-email':'ユーザー名に使えない文字があります（英数字・-・_ がおすすめ）','auth/too-many-requests':'試行回数が多すぎます。少し待ってください','auth/network-request-failed':'ネットにつながっていません','invalid_credentials':'ユーザー名かパスワードが違います','invalid_username':'ユーザー名は半角英小文字・数字・-・_ の3〜24文字にしてください','user_already_exists':'そのユーザー名（メール）はもう使われています','weak_password':'パスワードは6文字以上にしてください','email_address_invalid':'ユーザー名に使えない文字があります（英数字・-・_ がおすすめ）','over_request_rate_limit':'試行回数が多すぎます。少し待ってください','over_email_send_rate_limit':'メール送信の回数制限です。少し待ってください','email_not_confirmed':'メールの確認がまだです。確認メールのリンクを開いてください','confirm':(e&&e.message)})[c]||(c==='confirm'?e.message:'エラー：'+(e&&e.message||e));};
 function openAcct(){
   const body=document.getElementById('adlgBody');
   if(!window.Cloud||!Cloud.ready){
@@ -733,7 +733,13 @@ if(cfg.url&&cfg.anonKey){
     const chk=({data,error})=>{if(error)throw error;return data;};
     window.Cloud={ready:true,
       login:async(e,p)=>chk(await sb.auth.signInWithPassword({email:e,password:p})),
-      signup:async(e,p)=>{const d=chk(await sb.auth.signUp({email:e,password:p,options:{emailRedirectTo:location.origin+location.pathname}}));
+      signup:async(e,p)=>{
+        const m=e.match(/^(.+)@users\.geo-gokaku\.app$/);
+        if(m){ // ユーザー名アカウントはメール不要でサーバー側で作成してからログイン
+          const {error}=await sb.rpc('create_username_account',{p_username:m[1],p_password:p});
+          if(error)throw {code:(error.message||'').match(/invalid_username|weak_password|user_already_exists/)?.[0]||error.code,message:error.message};
+          return chk(await sb.auth.signInWithPassword({email:e,password:p}));}
+        const d=chk(await sb.auth.signUp({email:e,password:p,options:{emailRedirectTo:location.origin+location.pathname}}));
         if(!d.session)throw {code:'confirm',message:'確認メールを送りました。メール内のリンクを開いてからログインしてください。'};return d;},
       logout:async()=>chk(await sb.auth.signOut()),
       reset:async e=>chk(await sb.auth.resetPasswordForEmail(e,{redirectTo:location.origin+location.pathname})),
