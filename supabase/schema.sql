@@ -12,3 +12,7 @@ create policy "own progress update" on public.progress for update to authenticat
 
 -- ユーザー名だけでアカウントを作る関数（確認メールなし）は、Supabase上のマイグレーション「username_signup」で作成済み。
 -- public.create_username_account(p_username, p_password)
+
+-- AI診断の利用記録（回数制限用）: マイグレーション「ai_usage」「ai_usage_anon」で作成済み
+-- public.ai_usage(id, user_id nullable, ip, created_at)
+-- Edge Function「ai-diagnose」（APIキーは Edge Functions の Secrets「ANTHROPIC_API_KEY」に保存。サイトには置かない）
