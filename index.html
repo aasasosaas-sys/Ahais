@@ -261,6 +261,18 @@ dialog[open]::backdrop{animation:bdIn .25s ease}
 .q{box-shadow:0 1px 2px rgba(10,40,48,.04)}
 .q em.ok,.q em.ng,.q em.pk{width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;color:#fff}
 .q em.ok{background:var(--ok)}.q em.ng{background:var(--ng)}.q em.pk{background:var(--pick)}
+.btn.ai{background:linear-gradient(120deg,#7b4fb5,#1f6fb5);box-shadow:0 4px 14px rgba(91,79,181,.35);color:#fff!important}
+.aibox{line-height:1.85;font-size:15.5px}
+.aibox h3{font-size:17px;margin:20px 0 8px;padding-left:10px;border-left:4px solid #7b4fb5}
+.aibox h3:first-child{margin-top:0}
+.aibox ul{padding-left:1.3em;margin:6px 0}
+.aibox li{margin:3px 0}
+.aibox b{background:linear-gradient(transparent 62%,rgba(240,165,49,.35) 0)}
+.aiload{display:flex;align-items:center;gap:12px;padding:26px;justify-content:center}
+.aiload i{width:10px;height:10px;border-radius:50%;background:#7b4fb5;animation:pop 1s infinite}
+.aiload i:nth-child(2){animation-delay:.15s;background:#1f6fb5}.aiload i:nth-child(3){animation-delay:.3s;background:#2e9e4f}
+.secrow{display:grid;grid-template-columns:auto 1fr 110px auto;gap:10px;align-items:center;padding:8px 0;border-bottom:1px solid var(--line);font-size:13.5px}
+.secrow:last-child{border-bottom:0}
 @media (max-width:600px){.tgw{display:none}.hero{grid-template-columns:1fr}.ringbox{margin:0 auto;order:-1}.hero h2{font-size:22px}.tabs{display:flex;overflow-x:auto;border-radius:14px}}
 @media (max-width:600px){ header #acct{max-width:92px;overflow:hidden;text-overflow:ellipsis} header #gear{font-size:0;padding:6px 9px} header #gear::before{content:'⚙';font-size:15px}
  main{padding:12px} .ansbar{margin:12px -12px 0} .qhead h2{font-size:19px} .choices button{min-width:44px;height:46px;font-size:20px} header .t{font-size:15px} .seg button{min-width:0;flex:1;padding:8px 6px} }
@@ -393,6 +405,7 @@ function home(){
         <button class="btn sec" id="wrongAll" ${wrong.length?'':'disabled'}>間違い直し（${wrong.length}）</button>
         <button class="btn sec" id="randAll">ランダム20問</button>
         ${LAST.length?'<a class="btn sec" href="#/result">前回の採点</a>':''}
+        <a class="btn ai" href="#/ai">🤖 AI診断</a>
       </div></div>
     <div class="ringbox">${ring(all.ok,all.ng,all.total,150,14)}<div class="rc"><b class="num">${all.total?Math.round(all.ok/all.total*100):0}<small style="font-size:16px">%</small></b><span>正解 ${all.ok}／${all.total}問</span></div></div>
   </section>
@@ -794,6 +807,46 @@ function countUp(el,to){if(!el)return;if(reduce.matches||!to){el.textContent=to;
 new MutationObserver(ms=>ms.forEach(m=>m.addedNodes.forEach(n=>{if(n.nodeType!==1)return;(n.tagName==='IMG'?[n]:n.querySelectorAll('img')).forEach(im=>{
   if(im.complete&&im.naturalWidth)im.classList.add('ld');else{im.addEventListener('load',()=>im.classList.add('ld'),{once:true});im.addEventListener('error',()=>im.classList.add('ld'),{once:true});}});}))).observe(document.body,{childList:true,subtree:true});
 
+// ---- AI診断（ログインなしでも使える）
+function buildReport(){
+  const lines={};[6,7,8,9].forEach(l=>{const qs=ALLQ.filter(q=>q.line===l),st=stats(qs);lines[l+'割ライン']={問題数:qs.length,解いた:st.ok+st.ng,正解:st.ok};});
+  const secs=[];BOOK.forEach(c=>(c.sections||[]).forEach(S=>{const qs=S.qs.map(id=>QMAP[id]).filter(Boolean).filter(inTarget),st=stats(qs);
+    const wrong=qs.filter(q=>res(q.id)&&!res(q.id).r).map(q=>`${q.id} ${q.title||''}（${q.line}割）`);
+    secs.push({節:`${S.id} ${S.title}`,章:c.name,問題数:qs.length,解いた:st.ok+st.ng,正解:st.ok,間違えた問題:wrong.slice(0,8),過去問出題数:S.count||null});}));
+  const tq=ALLQ.filter(inTarget),all=stats(tq);
+  return {目標:ui.target?ui.target+'割':'全問',全体:{問題数:tq.length,解いた:all.ok+all.ng,正解:all.ok},ライン別:lines,連続日数:streak(),節別:secs};
+}
+function md(t){const e=esc(t).replace(/\*\*(.+?)\*\*/g,'<b>$1</b>');let out='',inUl=false;
+  for(const ln of e.split('\n')){const l=ln.trim();
+    if(/^#{1,4}\s/.test(l)){if(inUl){out+='</ul>';inUl=false;}out+=`<h3>${l.replace(/^#+\s*/,'')}</h3>`;}
+    else if(/^([-*・]|\d+[.)])\s/.test(l)){if(!inUl){out+='<ul>';inUl=true;}out+=`<li>${l.replace(/^([-*・]|\d+[.)])\s*/,'')}</li>`;}
+    else if(l){if(inUl){out+='</ul>';inUl=false;}out+=`<p style="margin:6px 0">${l}</p>`;}}
+  return out+(inUl?'</ul>':'');}
+function aiView(){
+  setHead('AI診断',true);
+  const rep=buildReport(),last=load(KEY+'-ai',null);
+  const weak=rep.節別.filter(s=>s.解いた>0).map(s=>({...s,acc:s.正解/s.解いた})).sort((a,b)=>a.acc-b.acc).slice(0,6);
+  $app.innerHTML=`<section class="card hero" style="grid-template-columns:1fr">
+    <div><div class="hello">AI COACH</div><h2>🤖 あなたの弱点をAIが分析</h2>
+    <p class="muted" style="margin:0 0 14px;font-size:14px">解いた記録（節ごとの正解率・間違えた問題・目標ライン）をもとに、弱点と次にやることを提案します。<br>1日3回まで（ログインすると5回）。</p>
+    <div class="row"><button class="btn ai" id="go">${last?'もう一度診断する':'診断する'}</button>
+    <span class="muted" style="font-size:13px">解いた問題 ${rep.全体.解いた}問／目標 ${rep.目標}</span></div></div></section>
+    ${weak.length?`<section class="card" style="margin-bottom:14px"><b style="font-size:15px">正解率が低い節</b><div style="margin-top:8px">${weak.map(s=>`<div class="secrow"><span class="sid">${s.節.split(' ')[0]}</span><span>${esc(s.節.split(' ').slice(1).join(' '))}</span><span>${bar({ok:s.正解,ng:s.解いた-s.正解,total:s.解いた},6)}</span><b class="num">${Math.round(s.acc*100)}%</b></div>`).join('')}</div></section>`:''}
+    <section class="card" id="aiout">${last?`<div class="muted" style="font-size:12px;margin-bottom:10px">前回の診断（${new Date(last.at).toLocaleString('ja-JP')}）</div><div class="aibox">${md(last.text)}</div>`:'<div class="muted empty">「診断する」を押すと、ここに分析結果が出ます。</div>'}</section>`;
+  document.getElementById('go').onclick=async()=>{
+    const out=document.getElementById('aiout'),btn=document.getElementById('go');
+    if(!window.Cloud||!Cloud.ready){out.innerHTML='<div class="empty">サーバーに接続できません。時間をおいて試してください。</div>';return;}
+    if(rep.全体.解いた<5&&!confirm('まだ解いた問題が少ないので、診断はおおまかになります。続けますか？'))return;
+    btn.disabled=true;out.innerHTML='<div class="aiload"><i></i><i></i><i></i><span class="muted">分析しています…（30秒ほど）</span></div>';
+    try{const r=await Cloud.diagnose(rep);store(KEY+'-ai',{text:r.text,at:Date.now()});
+      out.innerHTML=`<div class="muted" style="font-size:12px;margin-bottom:10px">今日の残り ${r.remaining}回${r.loggedIn?'':'（ログインすると1日5回）'}</div><div class="aibox">${md(r.text)}</div>`;}
+    catch(e){const m={limit:`今日の診断回数（${e.limit||3}回）を使い切りました。${e.loggedIn?'':'ログインすると1日5回まで使えます。'}明日また試してください。`,busy:'今日はみんなの利用が多く、上限に達しました。明日また試してください。',no_api_key:'管理者のAPIキーがまだ設定されていません。',bad_api_key:'APIキーが無効です（管理者の設定を確認してください）。',rate_limited:'混み合っています。少し待ってから試してください。',refusal:'うまく分析できませんでした。もう一度試してください。'}[e.code]||('エラーが起きました：'+(e.detail||e.code||e));
+      out.innerHTML=`<div class="empty ng">${esc(m)}</div>`;}
+    finally{btn.disabled=false;}
+  };
+  window.scrollTo(0,0);
+}
+
 // ---- ルーター
 function route(anim){
   routeInner();
@@ -804,6 +857,7 @@ function routeInner(){
   document.onkeydown=null;onOrient=null;INK.show(false);
   const h=location.hash.replace(/^#\/?/,'').split('/');
   if(h[0]==='result')return result();
+  if(h[0]==='ai')return aiView();
   if(h[0]==='print'){const c=BOOK.find(x=>x.ch==h[1]);if(c)return printView(c,h[2],h[3]);}
   if(h[0]==='ch'){const c=BOOK.find(x=>x.ch==h[1]);if(!c)return home();
     if(h[2]==='q')return question(c,h[3]);
@@ -837,6 +891,9 @@ if(cfg.url&&cfg.anonKey){
       reset:async e=>chk(await sb.auth.resetPasswordForEmail(e,{redirectTo:location.origin+location.pathname})),
       pull:async uid=>{const d=chk(await sb.from('progress').select('data').eq('user_id',uid).maybeSingle());return d?d.data:null;},
       push:async(uid,data)=>chk(await sb.from('progress').upsert({user_id:uid,data,updated_at:new Date().toISOString()})),
+      diagnose:async report=>{const {data,error}=await sb.functions.invoke('ai-diagnose',{body:{report}});
+        if(error){let b=null;try{b=await error.context.json();}catch(_){}throw {code:(b&&b.error)||'network',detail:b&&b.detail,limit:b&&b.limit,loggedIn:b&&b.loggedIn};}
+        return data;},
     };
     let last=null;
     const fire=u=>{const id=u?u.id:null;if(id===last)return;last=id;
